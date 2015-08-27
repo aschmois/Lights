@@ -1,0 +1,23 @@
+<resources>
+
+    <!-- Strings related to login -->
+    <string name="prompt_ip">host:port</string>
+    <string name="secret_key">Secret Key</string>
+    <string name="show">Show</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in</string>
+
+    <string name="host_help">Host name or ip address with port only. This is not an http link. If port not specified, default is 7123. i.e. 192.168.1.20:8000</string>
+    <string name="enc_help">This is your encryption key</string>
+    <string name="pwd_help">This is your authentication password</string>
+
+    <string name="error_invalid_host">This host is invalid</string>
+    <string name="error_cant_reach_host">Host is unreachable</string>
+    <string name="error_incorrect_password">This password is incorrect</string>
+    <string name="error_incorrect_secret_key">This secret key is incorrect</string>
+    <string name="error_invalid_secret_key">This secret key is invalid</string>
+    <string name="error_field_required">This field is required</string>
+
+    <string name="qr_code">QR Code</string>
+    <string name="broken_qr_code">Broken QR Code</string>
+</resources>
