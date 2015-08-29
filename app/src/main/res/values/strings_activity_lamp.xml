@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="timer_entries">Timer Entries</string>
+    <string name="no_lamps">No Lamps</string>
+    <string name="no_timer">No Timer</string>
+    <string name="ip_address">IP:</string>
+    <string name="inverted">Inverted:</string>
+    <string name="toggle_lamp">Toggle Lamp</string>
 </resources>

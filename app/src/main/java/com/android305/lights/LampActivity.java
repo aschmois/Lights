@@ -19,6 +19,8 @@ import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,6 +31,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android305.lights.util.Group;
+import com.android305.lights.util.GroupAdapter;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
 import com.android305.lights.util.ui.UpdateableFragment;
 
@@ -120,17 +123,19 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
             return mData.valueAt(position).getName();
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public int getItemPosition(Object object) {
             if (object instanceof UpdateableFragment) {
-                ((UpdateableFragment) object).update(mData.get(((UpdateableFragment) object).getGroupId()));
+                UpdateableFragment<Group> fragment = (UpdateableFragment<Group>) object;
+                fragment.update(mData.get(fragment.getDataId()));
             }
             //don't return POSITION_NONE, avoid fragment recreation.
             return super.getItemPosition(object);
         }
     }
 
-    public static class GroupFragment extends Fragment implements UpdateableFragment {
+    public static class GroupFragment extends Fragment implements UpdateableFragment<Group> {
         private static final String ARG_GROUP = "group";
 
         public static GroupFragment newInstance(@NonNull Group group) {
@@ -142,7 +147,10 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
         }
 
         private int groupId;
+        private View rootView;
         private TextView title;
+        private TextView emptyLamps;
+        private RecyclerView lampList;
 
         public GroupFragment() {
         }
@@ -159,19 +167,37 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
             if (group == null)
                 throw new RuntimeException("Group was lost somewhere in the memory");
             groupId = group.getId();
-            View rootView = inflater.inflate(R.layout.fragment_lamp, container, false);
-            title = (TextView) rootView.findViewById(R.id.lamp_or_group_title);
-            title.setText(group.getName());
+            rootView = inflater.inflate(R.layout.fragment_lamp, container, false);
+            title = find(R.id.lamp_or_group_title);
+            lampList = find(R.id.lamp_list);
+            lampList.setLayoutManager(new LinearLayoutManager(getActivity()));
+            emptyLamps = find(R.id.no_lamps);
+            update(group);
             return rootView;
+        }
+
+        @SuppressWarnings("unchecked")
+        public <E> E find(int id) {
+            return (E) rootView.findViewById(id);
         }
 
         @Override
         public void update(Group group) {
             title.setText(group.getName());
+            if (group.getLamps() != null) {
+                GroupAdapter adapter = new GroupAdapter(group.getLamps());
+                lampList.swapAdapter(adapter, false);
+                lampList.setVisibility(View.VISIBLE);
+                emptyLamps.setVisibility(View.GONE);
+            } else {
+                lampList.setAdapter(null);
+                lampList.setVisibility(View.GONE);
+                emptyLamps.setVisibility(View.VISIBLE);
+            }
         }
 
         @Override
-        public int getGroupId() {
+        public int getDataId() {
             return groupId;
         }
     }
