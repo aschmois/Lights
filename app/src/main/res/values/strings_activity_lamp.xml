@@ -2,8 +2,11 @@
 <resources>
     <string name="timer_entries">Timer Entries</string>
     <string name="no_lamps">No Lamps</string>
-    <string name="no_timer">No Timer</string>
+    <string name="no_timer">No Timer Entries</string>
     <string name="ip_address">IP:</string>
     <string name="inverted">Inverted:</string>
-    <string name="toggle_lamp">Toggle Lamp</string>
+    <string name="toggle">Toggle</string>
+    <string name="info">Info</string>
+    <string name="edit">Edit</string>
+    <string name="connection_lost">Connection Lost</string>
 </resources>

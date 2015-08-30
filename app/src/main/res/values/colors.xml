@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="lamp_on">#00E676</color>
+    <color name="lamp_on">#E8F5E9</color>
+    <color name="lamp_error">#FFEBEE</color>
+    <color name="connection_error">#EF5350</color>
 </resources>

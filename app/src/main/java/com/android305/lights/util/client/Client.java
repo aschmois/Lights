@@ -32,6 +32,7 @@ public class Client {
     /* Group */
     public final static int GROUP_ERROR_USAGE = 2000;
     public final static int GROUP_SQL_ERROR = 2001;
+    public final static int GROUP_REFRESH = 2002;
 
     public final static int GROUP_ADD_SUCCESS = 2100;
     public final static int GROUP_ALREADY_EXISTS = 2101;
@@ -50,6 +51,9 @@ public class Client {
 
     public final static int LAMP_GET_SUCCESS = 3200;
     public final static int LAMP_GET_DOES_NOT_EXIST = 3201;
+
+    public final static int LAMP_TOGGLE_SUCCESS = 3300;
+    public final static int LAMP_TOGGLE_DOES_NOT_EXIST = 3301;
 
     public interface ClientInterface {
         void handshake(@Nullable Timestamp serverTime);

@@ -1,6 +1,5 @@
 package com.android305.lights;
 
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -10,49 +9,35 @@ import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.util.SparseArray;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android305.lights.adapters.SectionsPagerAdapter;
+import com.android305.lights.interfaces.ActivityAttachService;
 import com.android305.lights.util.Group;
-import com.android305.lights.util.GroupAdapter;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
-import com.android305.lights.util.ui.UpdateableFragment;
 
-public class LampActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>> {
+public class LampActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
     private static final String TAG = "LampActivity";
     private ClientService mService;
     private boolean mBound = false;
-    private ProgressTask mProgressTask = null;
+    private LostConnectionTask mLostConnectionTask = null;
     private SectionsPagerAdapter mSectionsPagerAdapter;
-
-    /**
-     * The {@link ViewPager} that will host the section contents.
-     */
-    private ViewPager mViewPager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_lamp);
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        mViewPager = (ViewPager) findViewById(R.id.pager);
+        ViewPager mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
     }
@@ -77,7 +62,6 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_lamp, menu);
@@ -95,112 +79,6 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
         }
     }
 
-    public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
-        private SparseArray<Group> mData;
-
-        public SectionsPagerAdapter(FragmentManager fm) {
-            super(fm);
-            mData = new SparseArray<>();
-        }
-
-        public void setData(@NonNull SparseArray<Group> data) {
-            mData = data;
-            notifyDataSetChanged();
-        }
-
-        @Override
-        public Fragment getItem(int position) {
-            return GroupFragment.newInstance(mData.valueAt(position));
-        }
-
-        @Override
-        public int getCount() {
-            return mData.size();
-        }
-
-        @Override
-        public CharSequence getPageTitle(int position) {
-            return mData.valueAt(position).getName();
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public int getItemPosition(Object object) {
-            if (object instanceof UpdateableFragment) {
-                UpdateableFragment<Group> fragment = (UpdateableFragment<Group>) object;
-                fragment.update(mData.get(fragment.getDataId()));
-            }
-            //don't return POSITION_NONE, avoid fragment recreation.
-            return super.getItemPosition(object);
-        }
-    }
-
-    public static class GroupFragment extends Fragment implements UpdateableFragment<Group> {
-        private static final String ARG_GROUP = "group";
-
-        public static GroupFragment newInstance(@NonNull Group group) {
-            GroupFragment fragment = new GroupFragment();
-            Bundle args = new Bundle();
-            args.putSerializable(ARG_GROUP, group);
-            fragment.setArguments(args);
-            return fragment;
-        }
-
-        private int groupId;
-        private View rootView;
-        private TextView title;
-        private TextView emptyLamps;
-        private RecyclerView lampList;
-
-        public GroupFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            Bundle args;
-            if (savedInstanceState != null) {
-                args = savedInstanceState;
-            } else {
-                args = getArguments();
-            }
-            Group group = (Group) args.getSerializable(ARG_GROUP);
-            if (group == null)
-                throw new RuntimeException("Group was lost somewhere in the memory");
-            groupId = group.getId();
-            rootView = inflater.inflate(R.layout.fragment_lamp, container, false);
-            title = find(R.id.lamp_or_group_title);
-            lampList = find(R.id.lamp_list);
-            lampList.setLayoutManager(new LinearLayoutManager(getActivity()));
-            emptyLamps = find(R.id.no_lamps);
-            update(group);
-            return rootView;
-        }
-
-        @SuppressWarnings("unchecked")
-        public <E> E find(int id) {
-            return (E) rootView.findViewById(id);
-        }
-
-        @Override
-        public void update(Group group) {
-            title.setText(group.getName());
-            if (group.getLamps() != null) {
-                GroupAdapter adapter = new GroupAdapter(group.getLamps());
-                lampList.swapAdapter(adapter, false);
-                lampList.setVisibility(View.VISIBLE);
-                emptyLamps.setVisibility(View.GONE);
-            } else {
-                lampList.setAdapter(null);
-                lampList.setVisibility(View.GONE);
-                emptyLamps.setVisibility(View.VISIBLE);
-            }
-        }
-
-        @Override
-        public int getDataId() {
-            return groupId;
-        }
-    }
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
@@ -213,37 +91,35 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
         Bundle data = msg.getExtras();
         switch (data.getInt(ClientService.COMMAND, 0)) {
             case ClientService.LOST_CONNECTION:
-                mProgressTask = new ProgressTask(true);
-                mProgressTask.execute();
+                if (mLostConnectionTask == null) {
+                    mLostConnectionTask = new LostConnectionTask();
+                    mLostConnectionTask.execute();
+                }
                 break;
-            case ClientService.LAMP_STATUS_NEEDS_REFRESH:
-                getSupportLoaderManager().restartLoader(0, null, this);
+            case ClientService.GROUP_NEEDS_REFRESH:
+                Group g = (Group) data.getSerializable(ClientService.GROUP_EXTRA);
+                if (g != null)
+                    mSectionsPagerAdapter.updateGroup(g);
                 break;
             default:
                 break;
         }
     }
 
-    class ProgressTask extends AsyncTask<Void, Void, Integer> {
-        private ProgressDialog dialog;
-        private boolean background;
+    @Override
+    public ClientService getService() {
+        return mService;
+    }
 
-        public ProgressTask(boolean background) {
-            this.background = background;
-            if (!background)
-                dialog = new ProgressDialog(LampActivity.this);
-        }
+    class LostConnectionTask extends AsyncTask<Void, Void, Integer> {
+        View mConnectionLostView;
 
-        public ProgressTask(ProgressDialog dialog) {
-            this.background = true;
-            this.dialog = dialog;
+        public LostConnectionTask() {
+            mConnectionLostView = findViewById(R.id.connection_lost_view);
         }
 
         protected void onPreExecute() {
-            if (!background) {
-                dialog.setMessage("Connection lost...");
-                dialog.show();
-            }
+            mConnectionLostView.setVisibility(View.VISIBLE);
         }
 
         @Override
@@ -251,32 +127,32 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
             Intent i;
             switch (code) {
                 case ClientService.ERROR_PASSWORD_INVALID:
-                    mProgressTask = null;
+                    mLostConnectionTask = null;
                     i = new Intent(LampActivity.this, LoginActivity.class);
                     i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
                     i.putExtra(LoginActivity.EXTRA_PASSWORD_INVALID, true);
                     startActivity(i);
+                    finish();
                     break;
                 case ClientService.ERROR_KEY_INVALID:
-                    mProgressTask = null;
+                    mLostConnectionTask = null;
                     i = new Intent(LampActivity.this, LoginActivity.class);
                     i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
                     i.putExtra(LoginActivity.EXTRA_KEY_INVALID, true);
                     startActivity(i);
+                    finish();
                     break;
                 case ClientService.ERROR_HOST_INVALID:
-                    mProgressTask = new ProgressTask(dialog);
-                    mProgressTask.execute();
+                    mLostConnectionTask = new LostConnectionTask();
+                    mLostConnectionTask.execute();
                     break;
                 case ClientService.ERROR_UNKNOWN:
-                    mProgressTask = null;
+                    mLostConnectionTask = null;
                     Toast.makeText(getApplicationContext(), "Unknown error. Check server console.", Toast.LENGTH_SHORT).show();
                     break;
                 case ClientService.SUCCESS:
-                    mProgressTask = null;
-                    if (!background && dialog.isShowing()) {
-                        dialog.dismiss();
-                    }
+                    mLostConnectionTask = null;
+                    mConnectionLostView.setVisibility(View.GONE);
                     break;
             }
         }
@@ -288,9 +164,8 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
 
         @Override
         protected void onCancelled() {
-            mProgressTask = null;
-            if (!background && dialog.isShowing())
-                dialog.cancel();
+            mLostConnectionTask = null;
+            mConnectionLostView.setVisibility(View.GONE);
         }
     }
 

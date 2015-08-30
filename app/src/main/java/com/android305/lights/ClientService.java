@@ -19,7 +19,6 @@ import org.json.JSONObject;
 
 import java.security.InvalidKeyException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.regex.Matcher;
@@ -35,9 +34,10 @@ public class ClientService extends Service implements Client.ClientInterface {
     public final static int ERROR_PASSWORD_INVALID = 2;
     public final static int ERROR_HOST_INVALID = 3;
 
+    public static final String GROUP_EXTRA = "lamp_extra";
     public final static String COMMAND = "COMMAND";
     public final static int LOST_CONNECTION = 1;
-    public final static int LAMP_STATUS_NEEDS_REFRESH = 2;
+    public final static int GROUP_NEEDS_REFRESH = 2;
     public final static String FILTER = "com.android305.lights.ACTIVITY_UPDATE";
 
     private Client client;
@@ -122,6 +122,7 @@ public class ClientService extends Service implements Client.ClientInterface {
                 if (!client.isConnected())
                     return ERROR_HOST_INVALID;
                 int code = response.get(actionId).getInt("code");
+                response.remove(actionId);
                 switch (code) {
                     case Client.AUTH_SUCCESS:
                         authenticated = true;
@@ -182,22 +183,7 @@ public class ClientService extends Service implements Client.ClientInterface {
                     response.remove(actionId);
                     for (int i = 0; i < array.length(); i++) {
                         JSONObject groupParsed = array.getJSONObject(i);
-                        JSONArray lampsParsed = null;
-                        if (groupParsed.has("lamps"))
-                            lampsParsed = groupParsed.getJSONArray("lamps");
-                        Group group = new Group();
-                        group.setId(groupParsed.getInt("id"));
-                        group.setName(groupParsed.getString("name"));
-                        if (lampsParsed != null) {
-                            ArrayList<Lamp> lamps = new ArrayList<>();
-                            for (int x = 0; x < lampsParsed.length(); x++) {
-                                JSONObject lampParsed = lampsParsed.getJSONObject(x);
-                                Lamp lamp = Lamp.getLamp(lampParsed);
-                                lamp.setGroup(group);
-                                lamps.add(lamp);
-                            }
-                            group.setLamps(lamps.toArray(new Lamp[lamps.size()]));
-                        }
+                        Group group = Group.getGroup(groupParsed);
                         groups.put(group.getId(), group);
                     }
                     Log.i(TAG, groups.toString());
@@ -212,8 +198,39 @@ public class ClientService extends Service implements Client.ClientInterface {
             Log.e(TAG, "getGroups() error", e);
             return null;
         }
-        response = null;
         return new SparseArray<>();
+    }
+
+    public Lamp toggleLamp(Lamp lamp) {
+        try {
+            int actionId = getActionId();
+            JSONObject write = new JSONObject();
+            write.put("action_id", actionId);
+            write.put("action", "lamp");
+            write.put("secondary_action", "toggle");
+            write.put("lamp", lamp.getParsed());
+            client.write(write.toString());
+            while (!response.containsKey(actionId) && client.isConnected())
+                sleep(10);
+            if (!client.isConnected())
+                return null;
+            switch (response.get(actionId).getInt("code")) {
+                case Client.LAMP_TOGGLE_SUCCESS:
+                    JSONObject parsed = response.get(actionId).getJSONObject("data").getJSONObject("lamp");
+                    Lamp retrievedLamp = Lamp.getLamp(parsed);
+                    response.remove(actionId);
+                    return retrievedLamp;
+                case Client.LAMP_TOGGLE_DOES_NOT_EXIST:
+                    return null;
+            }
+        } catch (InvalidKeyException e) {
+            Log.e(TAG, "getGroups() error", e);
+            return null;
+        } catch (JSONException e) {
+            Log.e(TAG, "getGroups() error", e);
+            return null;
+        }
+        return null;
     }
 
     public boolean isConnected() {
@@ -240,11 +257,22 @@ public class ClientService extends Service implements Client.ClientInterface {
     public void messageReceived(String msg) {
         try {
             JSONObject json = new JSONObject(msg);
-            response.put(json.getInt("action_id"), json);
+            int actionId = json.getInt("action_id");
+            int code = json.getInt("code");
+            if (actionId != -1) {
+                response.put(actionId, json);
+            } else {
+                switch (code) {
+                    case Client.GROUP_REFRESH:
+                        Intent i = new Intent(FILTER);
+                        i.putExtra(COMMAND, GROUP_NEEDS_REFRESH);
+                        i.putExtra(GROUP_EXTRA, Group.getGroup(json.getJSONObject("group")));
+                        LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+                        break;
+                }
+            }
             if (LoginActivity.DEBUG) {
-                int actionId = json.getInt("action_id");
                 boolean error = json.getBoolean("error");
-                int code = json.getInt("code");
                 String message = json.getString("message");
                 String original = json.getString("original");
                 StringBuilder sb = new StringBuilder("\n");

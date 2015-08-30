@@ -6,10 +6,15 @@ import org.json.JSONObject;
 import java.io.Serializable;
 
 public class Lamp implements Serializable {
+    public final static int STATUS_OFF = 0;
+    public final static int STATUS_ON = 1;
+    public final static int STATUS_PENDING = 2;
+    public final static int STATUS_ERROR = 3;
+
     private int id;
     private String name;
     private String ipAddress;
-    private boolean status;
+    private int status;
     private boolean invert;
     private String error = null;
     private Group group;
@@ -43,11 +48,11 @@ public class Lamp implements Serializable {
         this.ipAddress = ipAddress;
     }
 
-    public boolean isStatus() {
+    public int getStatus() {
         return status;
     }
 
-    public void setStatus(boolean status) {
+    public void setStatus(int status) {
         this.status = status;
     }
 
@@ -72,12 +77,16 @@ public class Lamp implements Serializable {
         return group;
     }
 
-    public void setInternalGroupId(int internalGroupId) {
-        this.internalGroupId = internalGroupId;
-    }
-
     public void setGroup(Group group) {
         this.group = group;
+    }
+
+    public int getInternalGroupId() {
+        return internalGroupId;
+    }
+
+    public void setInternalGroupId(int internalGroupId) {
+        this.internalGroupId = internalGroupId;
     }
 
     @Override
@@ -119,7 +128,7 @@ public class Lamp implements Serializable {
             if (parsed.has("ip"))
                 lamp.setIpAddress(parsed.getString("ip"));
             if (parsed.has("status"))
-                lamp.setStatus(parsed.getBoolean("status"));
+                lamp.setStatus(parsed.getInt("status"));
             if (parsed.has("invert"))
                 lamp.setInvert(parsed.getBoolean("invert"));
             if (parsed.has("error"))
