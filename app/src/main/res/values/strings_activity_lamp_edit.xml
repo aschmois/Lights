@@ -1,0 +1,12 @@
+<resources>
+
+    <string name="prompt_ip_address">IP Address</string>
+    <string name="prompt_lamp_name">Lamp Name</string>
+
+    <string name="host_lamp_help">Host name or ip address with port only. This is not an http link. If port not specified, default is 80. i.e. 192.168.1.20:8000</string>
+    <string name="relay_inverted">Relay Inverted</string>
+    <string name="invert_help">Normal relay is off when lamp is off and on when lamp is on. If this is backwards, check this.</string>
+
+    <string name="error_lamp_already_exists">Lamp already exists</string>
+
+</resources>

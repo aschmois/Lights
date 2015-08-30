@@ -13,8 +13,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
-import com.android305.lights.ClientService;
 import com.android305.lights.R;
+import com.android305.lights.service.ClientService;
+import com.android305.lights.service.LampUtils;
 import com.android305.lights.util.Lamp;
 
 public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
@@ -121,14 +122,16 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         @Override
         protected void onPostExecute(Lamp lamp) {
             mProgress.setVisibility(View.GONE);
-            mAdapter.mDataset[mPosition] = lamp;
-            mAdapter.onBindViewHolder(mViewHolder, mPosition);
+            if (lamp != null) {
+                mAdapter.mDataset[mPosition] = lamp;
+                mAdapter.onBindViewHolder(mViewHolder, mPosition);
+            }
             mViewHolder.mToggleLampTask = null;
         }
 
         @Override
         protected Lamp doInBackground(Void... args) {
-            return mAdapter.mService.toggleLamp(mLamp);
+            return LampUtils.toggleLamp(mAdapter.mService, mLamp);
         }
 
         @Override

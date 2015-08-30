@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="timer_entries">Timer Entries</string>
+    <string name="lamps">Lamps</string>
     <string name="no_lamps">No Lamps</string>
     <string name="no_timer">No Timer Entries</string>
     <string name="ip_address">IP:</string>
@@ -9,4 +10,5 @@
     <string name="info">Info</string>
     <string name="edit">Edit</string>
     <string name="connection_lost">Connection Lost</string>
+    <string name="no_groups">No Lamp Groups</string>
 </resources>

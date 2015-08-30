@@ -30,6 +30,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android305.lights.service.ClientService;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
@@ -388,7 +389,7 @@ public class LoginActivity extends AppCompatActivity {
     };
 
     private void goIntoLampActivity(boolean animation) {
-        Intent i = new Intent(LoginActivity.this, LampActivity.class);
+        Intent i = new Intent(LoginActivity.this, GroupActivity.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         if (!animation)
             i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);

@@ -3,18 +3,12 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              tools:context="com.android305.lights.LampActivity.LampOrGroupFragment">
+              tools:context="com.android305.lights.GroupActivity.LampOrGroupFragment">
 
-    <TextView
-        android:id="@+id/group_title"
-        style="?android:attr/listSeparatorTextViewStyle"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/lamp_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:paddingTop="@dimen/activity_vertical_margin"
-        android:textColor="@android:color/black"
-        android:textSize="17sp"/>
+        android:layout_height="?attr/actionBarSize"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -38,15 +32,10 @@
             android:text="@string/no_lamps"/>
     </LinearLayout>
 
-    <TextView
-        style="?android:attr/listSeparatorTextViewStyle"
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/timer_toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingLeft="@dimen/activity_horizontal_margin"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:text="@string/timer_entries"
-        android:textColor="@android:color/black"
-        android:textSize="17sp"/>
+        android:layout_height="?attr/actionBarSize"/>
 
     <LinearLayout
         android:layout_width="match_parent"

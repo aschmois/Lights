@@ -4,7 +4,8 @@ import android.content.Context;
 import android.support.v4.content.AsyncTaskLoader;
 import android.util.SparseArray;
 
-import com.android305.lights.ClientService;
+import com.android305.lights.service.ClientService;
+import com.android305.lights.service.GroupUtils;
 import com.android305.lights.util.Group;
 
 public class LampAndGroupLoader extends AsyncTaskLoader<SparseArray<Group>> {
@@ -23,6 +24,6 @@ public class LampAndGroupLoader extends AsyncTaskLoader<SparseArray<Group>> {
 
     @Override
     public SparseArray<Group> loadInBackground() {
-        return mService.getGroups();
+        return GroupUtils.getGroups(mService);
     }
 }

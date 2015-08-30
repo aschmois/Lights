@@ -6,7 +6,9 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -32,12 +34,14 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
 
     private int mGroupId;
     private View mRootView;
-    private TextView mTitle;
     private TextView mEmptyLamps;
     private RecyclerView mLampList;
 
     private TextView mEmptyTimers;
     private RecyclerView mTimerList;
+
+    private Toolbar mLampToolbar;
+    private Toolbar mTimerToolbar;
 
     public GroupFragment() {
     }
@@ -64,8 +68,14 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
         if (group == null)
             throw new RuntimeException("Group was lost somewhere in the memory");
         mGroupId = group.getId();
-        mRootView = inflater.inflate(R.layout.fragment_lamp, container, false);
-        mTitle = find(R.id.group_title);
+        mRootView = inflater.inflate(R.layout.fragment_group, container, false);
+
+        mLampToolbar = find(R.id.lamp_toolbar);
+        mLampToolbar.setTitle(R.string.lamps);
+        mLampToolbar.inflateMenu(R.menu.menu_lamp);
+        mTimerToolbar = find(R.id.timer_toolbar);
+        mTimerToolbar.setTitle(R.string.timer_entries);
+        mTimerToolbar.inflateMenu(R.menu.menu_timer);
 
         mLampList = find(R.id.lamp_list);
         mLampList.setLayoutManager(new LinearLayoutManager(getActivity()));
@@ -85,7 +95,33 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
 
     @Override
     public void update(Group group) {
-        mTitle.setText(group.getName());
+        mLampToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                switch (menuItem.getItemId()) {
+                    case R.id.action_toggle:
+                        //TODO: toggle all lamps in group
+                        return true;
+                    case R.id.action_add:
+                        //TODO: add lamp
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+        mTimerToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                switch (menuItem.getItemId()) {
+                    case R.id.action_add:
+                        //TODO: add lamp
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
         if (group.getLamps() != null) {
             LampAdapter adapter = new LampAdapter(mListener.getService(), group.getLamps());
             mLampList.swapAdapter(adapter, false);

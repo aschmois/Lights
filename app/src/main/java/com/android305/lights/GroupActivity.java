@@ -18,27 +18,49 @@ import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android305.lights.adapters.SectionsPagerAdapter;
 import com.android305.lights.interfaces.ActivityAttachService;
+import com.android305.lights.service.ClientService;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
 
-public class LampActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
-    private static final String TAG = "LampActivity";
+public class GroupActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
+    private static final String TAG = "GroupActivity";
     private ClientService mService;
     private boolean mBound = false;
     private LostConnectionTask mLostConnectionTask = null;
     private SectionsPagerAdapter mSectionsPagerAdapter;
+    private ViewPager mViewPager;
+    private TextView mNoGroupView;
+    private ProgressBar mLoadingGroups;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_lamp);
+        setContentView(R.layout.activity_group);
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        ViewPager mViewPager = (ViewPager) findViewById(R.id.pager);
+        mNoGroupView = (TextView) findViewById(R.id.no_groups);
+        mLoadingGroups = (ProgressBar) findViewById(R.id.loading_groups);
+        mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                setTitle(mSectionsPagerAdapter.getPageTitle(position));
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
     }
 
@@ -64,7 +86,7 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_lamp, menu);
+        getMenuInflater().inflate(R.menu.menu_group, menu);
         return true;
     }
 
@@ -128,7 +150,7 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
             switch (code) {
                 case ClientService.ERROR_PASSWORD_INVALID:
                     mLostConnectionTask = null;
-                    i = new Intent(LampActivity.this, LoginActivity.class);
+                    i = new Intent(GroupActivity.this, LoginActivity.class);
                     i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
                     i.putExtra(LoginActivity.EXTRA_PASSWORD_INVALID, true);
                     startActivity(i);
@@ -136,7 +158,7 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
                     break;
                 case ClientService.ERROR_KEY_INVALID:
                     mLostConnectionTask = null;
-                    i = new Intent(LampActivity.this, LoginActivity.class);
+                    i = new Intent(GroupActivity.this, LoginActivity.class);
                     i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
                     i.putExtra(LoginActivity.EXTRA_KEY_INVALID, true);
                     startActivity(i);
@@ -172,6 +194,15 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     public void onLoadFinished(Loader<SparseArray<Group>> loader, SparseArray<Group> data) {
         mSectionsPagerAdapter.setData(data);
+        mLoadingGroups.setVisibility(View.GONE);
+        if (data.size() > 0) {
+            setTitle(mSectionsPagerAdapter.getPageTitle(0));
+            mViewPager.setVisibility(View.VISIBLE);
+            mNoGroupView.setVisibility(View.GONE);
+        } else {
+            mViewPager.setVisibility(View.GONE);
+            mNoGroupView.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -181,6 +212,7 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<SparseArray<Group>> onCreateLoader(int id, Bundle args) {
+        mLoadingGroups.setVisibility(View.VISIBLE);
         return new LampAndGroupLoader(this, mService);
     }
 
@@ -194,7 +226,7 @@ public class LampActivity extends AppCompatActivity implements LoaderManager.Loa
             // We've bound to ClientService, cast the IBinder and get LocalService instance
             ClientService.LocalBinder binder = (ClientService.LocalBinder) service;
             mService = binder.getService();
-            getSupportLoaderManager().initLoader(0, null, LampActivity.this);
+            getSupportLoaderManager().initLoader(0, null, GroupActivity.this);
             mBound = true;
         }
 

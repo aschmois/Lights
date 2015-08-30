@@ -1,4 +1,4 @@
-package com.android305.lights;
+package com.android305.lights.service;
 
 import android.app.Service;
 import android.content.Intent;
@@ -7,20 +7,17 @@ import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.util.SparseArray;
 
+import com.android305.lights.LoginActivity;
 import com.android305.lights.util.Group;
-import com.android305.lights.util.Lamp;
 import com.android305.lights.util.client.Client;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.security.InvalidKeyException;
 import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,7 +37,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     public final static int GROUP_NEEDS_REFRESH = 2;
     public final static String FILTER = "com.android305.lights.ACTIVITY_UPDATE";
 
-    private Client client;
+    protected Client client;
 
     private boolean handshake = false;
     private boolean handshakeFailed = false;
@@ -50,7 +47,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     private String mSecretKey;
     private boolean authenticated = true;
 
-    private HashMap<Integer, JSONObject> response = new HashMap<>();
+    protected HashMap<Integer, JSONObject> response = new HashMap<>();
 
     public ClientService() {
     }
@@ -63,7 +60,7 @@ public class ClientService extends Service implements Client.ClientInterface {
      * runs in the same process as its clients, we don't need to deal with IPC.
      */
     public class LocalBinder extends Binder {
-        ClientService getService() {
+        public ClientService getService() {
             // Return this instance of LocalService so clients can call public methods
             return ClientService.this;
         }
@@ -104,7 +101,7 @@ public class ClientService extends Service implements Client.ClientInterface {
             try {
                 client.connect();
                 while (!handshake && !handshakeFailed && !invalidKey && client.isConnected())
-                    sleep(100);
+                    ServiceUtils.sleep(100);
                 if (!client.isConnected())
                     return ERROR_HOST_INVALID;
                 if (invalidKey)
@@ -118,7 +115,7 @@ public class ClientService extends Service implements Client.ClientInterface {
                 write.put("password", password);
                 client.write(write.toString());
                 while (!response.containsKey(actionId) && client.isConnected())
-                    sleep(10);
+                    ServiceUtils.sleep(10);
                 if (!client.isConnected())
                     return ERROR_HOST_INVALID;
                 int code = response.get(actionId).getInt("code");
@@ -158,79 +155,10 @@ public class ClientService extends Service implements Client.ClientInterface {
     }
 
     private int getActionId() {
-        int actionId = new Random().nextInt(5000);
+        int actionId = ServiceUtils.randInt(1, 999);
         if (response.containsKey(actionId))
             return getActionId();
         return actionId;
-    }
-
-    public SparseArray<Group> getGroups() {
-        try {
-            int actionId = getActionId();
-            JSONObject write = new JSONObject();
-            write.put("action_id", actionId);
-            write.put("action", "group");
-            write.put("secondary_action", "get-all");
-            client.write(write.toString());
-            while (!response.containsKey(actionId) && client.isConnected())
-                sleep(10);
-            if (!client.isConnected())
-                return null;
-            switch (response.get(actionId).getInt("code")) {
-                case Client.GROUP_GET_ALL_SUCCESS:
-                    SparseArray<Group> groups = new SparseArray<>();
-                    JSONArray array = response.get(actionId).getJSONObject("data").getJSONArray("groups");
-                    response.remove(actionId);
-                    for (int i = 0; i < array.length(); i++) {
-                        JSONObject groupParsed = array.getJSONObject(i);
-                        Group group = Group.getGroup(groupParsed);
-                        groups.put(group.getId(), group);
-                    }
-                    Log.i(TAG, groups.toString());
-                    return groups;
-                case Client.GROUP_GET_ALL_DOES_NOT_EXIST:
-                    return new SparseArray<>();
-            }
-        } catch (InvalidKeyException e) {
-            Log.e(TAG, "getGroups() error", e);
-            return null;
-        } catch (JSONException e) {
-            Log.e(TAG, "getGroups() error", e);
-            return null;
-        }
-        return new SparseArray<>();
-    }
-
-    public Lamp toggleLamp(Lamp lamp) {
-        try {
-            int actionId = getActionId();
-            JSONObject write = new JSONObject();
-            write.put("action_id", actionId);
-            write.put("action", "lamp");
-            write.put("secondary_action", "toggle");
-            write.put("lamp", lamp.getParsed());
-            client.write(write.toString());
-            while (!response.containsKey(actionId) && client.isConnected())
-                sleep(10);
-            if (!client.isConnected())
-                return null;
-            switch (response.get(actionId).getInt("code")) {
-                case Client.LAMP_TOGGLE_SUCCESS:
-                    JSONObject parsed = response.get(actionId).getJSONObject("data").getJSONObject("lamp");
-                    Lamp retrievedLamp = Lamp.getLamp(parsed);
-                    response.remove(actionId);
-                    return retrievedLamp;
-                case Client.LAMP_TOGGLE_DOES_NOT_EXIST:
-                    return null;
-            }
-        } catch (InvalidKeyException e) {
-            Log.e(TAG, "getGroups() error", e);
-            return null;
-        } catch (JSONException e) {
-            Log.e(TAG, "getGroups() error", e);
-            return null;
-        }
-        return null;
     }
 
     public boolean isConnected() {
@@ -305,10 +233,4 @@ public class ClientService extends Service implements Client.ClientInterface {
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    private void sleep(long ms) {
-        try {
-            Thread.sleep(ms);
-        } catch (InterruptedException e) {
-        }
-    }
 }
