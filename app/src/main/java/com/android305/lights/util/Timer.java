@@ -3,10 +3,11 @@ package com.android305.lights.util;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.sql.Time;
 
-public class Timer {
+public class Timer implements Serializable {
     private int id;
     private Time start;
     private Time end;
