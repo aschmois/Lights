@@ -35,6 +35,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     public final static String COMMAND = "COMMAND";
     public final static int LOST_CONNECTION = 1;
     public final static int GROUP_NEEDS_REFRESH = 2;
+    public final static int GROUPS_NEEDS_REFRESH = 3;
     public final static String FILTER = "com.android305.lights.ACTIVITY_UPDATE";
 
     protected Client client;
@@ -151,7 +152,13 @@ public class ClientService extends Service implements Client.ClientInterface {
             return ERROR_PASSWORD_INVALID;
         if (mSecretKey == null)
             return ERROR_KEY_INVALID;
-        return authenticate(mHost, mSecretKey, mPassword);
+        int auth = authenticate(mHost, mSecretKey, mPassword);
+        if (auth == SUCCESS) {
+            Intent i = new Intent(FILTER);
+            i.putExtra(COMMAND, GROUPS_NEEDS_REFRESH);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(i);
+        }
+        return auth;
     }
 
     private int getActionId() {
@@ -194,7 +201,7 @@ public class ClientService extends Service implements Client.ClientInterface {
                     case Client.GROUP_REFRESH:
                         Intent i = new Intent(FILTER);
                         i.putExtra(COMMAND, GROUP_NEEDS_REFRESH);
-                        i.putExtra(GROUP_EXTRA, Group.getGroup(json.getJSONObject("group")));
+                        i.putExtra(GROUP_EXTRA, Group.getGroup(json.getJSONObject("data").getJSONObject("group")));
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
                         break;
                 }
@@ -233,4 +240,14 @@ public class ClientService extends Service implements Client.ClientInterface {
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        try {
+            if (client != null) {
+                client.getSession().close(true);
+            }
+        } catch (Exception e) {
+        }
+    }
 }

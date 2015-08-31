@@ -43,6 +43,8 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     private Toolbar mLampToolbar;
     private Toolbar mTimerToolbar;
 
+    private LampAdapter mLampAdapter;
+
     public GroupFragment() {
     }
 
@@ -95,12 +97,32 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
 
     @Override
     public void update(Group group) {
+        if (group.getLamps() != null) {
+            mLampAdapter = new LampAdapter(mListener.getService(), group.getLamps());
+            mLampList.swapAdapter(mLampAdapter, false);
+            mLampList.setVisibility(View.VISIBLE);
+            mEmptyLamps.setVisibility(View.GONE);
+        } else {
+            mLampList.setAdapter(null);
+            mLampList.setVisibility(View.GONE);
+            mEmptyLamps.setVisibility(View.VISIBLE);
+        }
+        if (group.getTimers() != null) {
+            TimerAdapter adapter = new TimerAdapter(group.getTimers());
+            mTimerList.swapAdapter(adapter, false);
+            mTimerList.setVisibility(View.VISIBLE);
+            mEmptyTimers.setVisibility(View.GONE);
+        } else {
+            mTimerList.setAdapter(null);
+            mTimerList.setVisibility(View.GONE);
+            mEmptyTimers.setVisibility(View.VISIBLE);
+        }
         mLampToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.action_toggle:
-                        //TODO: toggle all lamps in group
+                        mLampAdapter.toggleLamps();
                         return true;
                     case R.id.action_add:
                         //TODO: add lamp
@@ -122,26 +144,6 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
                 }
             }
         });
-        if (group.getLamps() != null) {
-            LampAdapter adapter = new LampAdapter(mListener.getService(), group.getLamps());
-            mLampList.swapAdapter(adapter, false);
-            mLampList.setVisibility(View.VISIBLE);
-            mEmptyLamps.setVisibility(View.GONE);
-        } else {
-            mLampList.setAdapter(null);
-            mLampList.setVisibility(View.GONE);
-            mEmptyLamps.setVisibility(View.VISIBLE);
-        }
-        if (group.getTimers() != null) {
-            TimerAdapter adapter = new TimerAdapter(group.getTimers());
-            mTimerList.swapAdapter(adapter, false);
-            mTimerList.setVisibility(View.VISIBLE);
-            mEmptyTimers.setVisibility(View.GONE);
-        } else {
-            mTimerList.setAdapter(null);
-            mTimerList.setVisibility(View.GONE);
-            mEmptyTimers.setVisibility(View.VISIBLE);
-        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import android.os.Build;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -21,6 +22,7 @@ import com.android305.lights.util.Lamp;
 public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
     private ClientService mService;
     private Lamp[] mDataset;
+    SparseArray<ViewHolder> viewHolders = new SparseArray<>();
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public int mlampId;
@@ -47,10 +49,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
                 public boolean onMenuItemClick(MenuItem menuItem) {
                     switch (menuItem.getItemId()) {
                         case R.id.action_toggle:
-                            if (mToggleLampTask == null) {
-                                mToggleLampTask = new ToggleLampTask(getAdapterPosition(), ViewHolder.this);
-                                mToggleLampTask.execute();
-                            }
+                            toggleLamp();
                             return true;
                         default:
                             return false;
@@ -58,6 +57,19 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
                 }
             });
             mProgressSpinner = (ProgressBar) mToolbar.findViewById(R.id.progress_spinner);
+        }
+
+        public void toggleLamp() {
+            if (mToggleLampTask == null) {
+                mToggleLampTask = new ToggleLampTask(this);
+                mToggleLampTask.execute();
+            }
+        }
+    }
+
+    public void toggleLamps() {
+        for (int i = 0; i < getItemCount(); i++) {
+            viewHolders.get(i).toggleLamp();
         }
     }
 
@@ -74,6 +86,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
+        viewHolders.put(position, holder);
         Lamp lamp = mDataset[position];
         holder.mlampId = lamp.getId();
         holder.mToolbar.setTitle(lamp.getName());
@@ -107,12 +120,12 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         int mPosition;
         LampAdapter mAdapter;
 
-        public ToggleLampTask(int position, ViewHolder viewHolder) {
+        public ToggleLampTask(ViewHolder viewHolder) {
             mAdapter = viewHolder.mAdapter;
             mProgress = viewHolder.mProgressSpinner;
-            mLamp = mAdapter.mDataset[position];
+            mPosition = viewHolder.getAdapterPosition();
+            mLamp = mAdapter.mDataset[mPosition];
             mViewHolder = viewHolder;
-            mPosition = position;
         }
 
         protected void onPreExecute() {

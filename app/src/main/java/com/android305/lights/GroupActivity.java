@@ -119,9 +119,14 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
                 }
                 break;
             case ClientService.GROUP_NEEDS_REFRESH:
-                Group g = (Group) data.getSerializable(ClientService.GROUP_EXTRA);
+                /*Group g = (Group) data.getSerializable(ClientService.GROUP_EXTRA);
                 if (g != null)
-                    mSectionsPagerAdapter.updateGroup(g);
+                    mSectionsPagerAdapter.updateGroup(g);*/
+                //TODO: actually update, commented code doesn't work
+                getSupportLoaderManager().restartLoader(0, null, GroupActivity.this);
+                break;
+            case ClientService.GROUPS_NEEDS_REFRESH:
+                getSupportLoaderManager().restartLoader(0, null, GroupActivity.this);
                 break;
             default:
                 break;
@@ -193,9 +198,10 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
 
     @Override
     public void onLoadFinished(Loader<SparseArray<Group>> loader, SparseArray<Group> data) {
-        mSectionsPagerAdapter.setData(data);
+        if (data != null)
+            mSectionsPagerAdapter.setData(data);
         mLoadingGroups.setVisibility(View.GONE);
-        if (data.size() > 0) {
+        if (data != null && data.size() > 0) {
             setTitle(mSectionsPagerAdapter.getPageTitle(0));
             mViewPager.setVisibility(View.VISIBLE);
             mNoGroupView.setVisibility(View.GONE);
@@ -207,7 +213,6 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
 
     @Override
     public void onLoaderReset(Loader<SparseArray<Group>> loader) {
-
     }
 
     @Override
