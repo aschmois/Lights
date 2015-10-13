@@ -1,6 +1,9 @@
 package com.android305.lights.fragments;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
@@ -13,15 +16,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.android305.lights.LampEditActivity;
 import com.android305.lights.R;
 import com.android305.lights.adapters.LampAdapter;
 import com.android305.lights.adapters.TimerAdapter;
+import com.android305.lights.dialogs.DeleteConfirmationDialog;
 import com.android305.lights.interfaces.ActivityAttachService;
 import com.android305.lights.interfaces.UpdateableFragment;
 import com.android305.lights.util.Group;
+import com.android305.lights.util.Lamp;
 
-public class GroupFragment extends Fragment implements UpdateableFragment<Group> {
+public class GroupFragment extends Fragment implements UpdateableFragment<Group>, DeleteConfirmationDialog.DeleteConfirmationListener {
     private static final String ARG_GROUP = "group";
+    public static final int LAMP_ADD = 1000;
+    public static final int LAMP_UPDATE = 1001;
+
     private ActivityAttachService mListener;
 
     public static GroupFragment newInstance(@NonNull Group group) {
@@ -44,12 +53,25 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     private Toolbar mTimerToolbar;
 
     private LampAdapter mLampAdapter;
+    private Group mGroup;
 
     public GroupFragment() {
     }
 
+    @SuppressWarnings("deprecation")
     @Override
+    @TargetApi(22)
     public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (ActivityAttachService) activity;
+        } catch (ClassCastException e) {
+            throw new RuntimeException(activity.toString() + " must implement ActivityAttachService");
+        }
+    }
+
+    @Override
+    public void onAttach(Context activity) {
         super.onAttach(activity);
         try {
             mListener = (ActivityAttachService) activity;
@@ -66,10 +88,10 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
         } else {
             args = getArguments();
         }
-        Group group = (Group) args.getSerializable(ARG_GROUP);
-        if (group == null)
+        mGroup = (Group) args.getSerializable(ARG_GROUP);
+        if (mGroup == null)
             throw new RuntimeException("Group was lost somewhere in the memory");
-        mGroupId = group.getId();
+        mGroupId = mGroup.getId();
         mRootView = inflater.inflate(R.layout.fragment_group, container, false);
 
         mLampToolbar = find(R.id.lamp_toolbar);
@@ -86,7 +108,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
         mTimerList = find(R.id.timer_list);
         mTimerList.setLayoutManager(new LinearLayoutManager(getActivity()));
         mEmptyTimers = find(R.id.no_timers);
-        update(group);
+        update(mGroup);
         return mRootView;
     }
 
@@ -98,7 +120,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     @Override
     public void update(Group group) {
         if (group.getLamps() != null) {
-            mLampAdapter = new LampAdapter(mListener.getService(), group.getLamps());
+            mLampAdapter = new LampAdapter(mListener.getService(), group.getLamps(), this);
             mLampList.swapAdapter(mLampAdapter, false);
             mLampList.setVisibility(View.VISIBLE);
             mEmptyLamps.setVisibility(View.GONE);
@@ -108,7 +130,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
             mEmptyLamps.setVisibility(View.VISIBLE);
         }
         if (group.getTimers() != null) {
-            TimerAdapter adapter = new TimerAdapter(group.getTimers());
+            TimerAdapter adapter = new TimerAdapter(mListener.getService(), group.getTimers(), this);
             mTimerList.swapAdapter(adapter, false);
             mTimerList.setVisibility(View.VISIBLE);
             mEmptyTimers.setVisibility(View.GONE);
@@ -125,7 +147,9 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
                         mLampAdapter.toggleLamps();
                         return true;
                     case R.id.action_add:
-                        //TODO: add lamp
+                        Intent i = new Intent(getContext(), LampEditActivity.class);
+                        i.putExtra(LampEditActivity.EXTRA_GROUP_ID, mGroupId);
+                        startActivityForResult(i, LAMP_ADD);
                         return true;
                     default:
                         return false;
@@ -137,7 +161,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
             public boolean onMenuItemClick(MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.action_add:
-                        //TODO: add lamp
+                        //TODO: add timer
                         return true;
                     default:
                         return false;
@@ -147,7 +171,38 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     }
 
     @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        switch (requestCode) {
+            case LAMP_ADD:
+                if (resultCode == Activity.RESULT_OK) {
+                    Lamp lamp = (Lamp) data.getSerializableExtra(LampEditActivity.EXTRA_LAMP);
+                    mLampAdapter.add(lamp);
+                }
+                break;
+            case LAMP_UPDATE:
+                if (resultCode == Activity.RESULT_OK) {
+                    Lamp lamp = (Lamp) data.getSerializableExtra(LampEditActivity.EXTRA_LAMP);
+                    int pos = data.getIntExtra(LampEditActivity.EXTRA_POSITION, -1);
+                    mLampAdapter.update(lamp, pos);
+                }
+        }
+    }
+
+    @Override
+    public void onDeleteLamp(int position) {
+        mLampAdapter.delete(position);
+    }
+
+    @Override
     public int getDataId() {
         return mGroupId;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putSerializable(ARG_GROUP, mGroup);
     }
 }

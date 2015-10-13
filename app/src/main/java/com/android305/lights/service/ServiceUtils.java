@@ -29,7 +29,7 @@ public class ServiceUtils {
     public static void sleep(long ms) {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
     }
 }

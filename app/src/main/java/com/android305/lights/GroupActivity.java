@@ -1,19 +1,15 @@
 package com.android305.lights;
 
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,10 +24,8 @@ import com.android305.lights.service.ClientService;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
 
-public class GroupActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
+public class GroupActivity extends MyAppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
     private static final String TAG = "GroupActivity";
-    private ClientService mService;
-    private boolean mBound = false;
     private LostConnectionTask mLostConnectionTask = null;
     private SectionsPagerAdapter mSectionsPagerAdapter;
     private ViewPager mViewPager;
@@ -39,9 +33,9 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
     private ProgressBar mLoadingGroups;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onServiceBind(ClientService mService) {
         setContentView(R.layout.activity_group);
+
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
         mNoGroupView = (TextView) findViewById(R.id.no_groups);
         mLoadingGroups = (ProgressBar) findViewById(R.id.loading_groups);
@@ -61,27 +55,19 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
             public void onPageScrollStateChanged(int state) {
             }
         });
+        getSupportLoaderManager().initLoader(0, null, GroupActivity.this);
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
+    public void onServiceReBind(ClientService mService) {
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
-        // Bind to LocalService
-        Intent intent = new Intent(this, ClientService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
-        // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
     }
 
     @Override
@@ -220,25 +206,4 @@ public class GroupActivity extends AppCompatActivity implements LoaderManager.Lo
         mLoadingGroups.setVisibility(View.VISIBLE);
         return new LampAndGroupLoader(this, mService);
     }
-
-    /**
-     * Defines callbacks for service binding, passed to bindService()
-     */
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            // We've bound to ClientService, cast the IBinder and get LocalService instance
-            ClientService.LocalBinder binder = (ClientService.LocalBinder) service;
-            mService = binder.getService();
-            getSupportLoaderManager().initLoader(0, null, GroupActivity.this);
-            mBound = true;
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBound = false;
-        }
-    };
-
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.android305.lights"
-          xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest
+    package="com.android305.lights"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -28,7 +29,11 @@
 
         <activity
             android:name=".GroupActivity"
-            android:label="@string/title_activity_lamp"/>
+            android:label="@string/title_activity_group"/>
+
+        <activity
+            android:name=".LampEditActivity"
+            android:label="@string/title_activity_lamp_edit"/>
     </application>
 
 </manifest>

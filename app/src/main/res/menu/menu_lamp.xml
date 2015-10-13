@@ -4,12 +4,14 @@
       tools:context="com.android305.lights.GroupActivity">
     <item
         android:id="@+id/action_toggle"
+        android:icon="@drawable/ic_action_bulb"
         android:orderInCategory="1"
         android:title="@string/toggle"
-        app:showAsAction="ifRoom|withText"/>
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_add"
+        android:icon="@drawable/ic_action_add"
         android:orderInCategory="100"
         android:title="@string/new_lamp"
-        app:showAsAction="never"/>
+        app:showAsAction="ifRoom"/>
 </menu>

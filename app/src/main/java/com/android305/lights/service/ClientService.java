@@ -247,7 +247,7 @@ public class ClientService extends Service implements Client.ClientInterface {
             if (client != null) {
                 client.getSession().close(true);
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 }

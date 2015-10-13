@@ -55,6 +55,11 @@ public class Client {
     public final static int LAMP_TOGGLE_SUCCESS = 3300;
     public final static int LAMP_TOGGLE_DOES_NOT_EXIST = 3301;
 
+    public final static int LAMP_EDIT_SUCCESS = 3400;
+    public final static int LAMP_EDIT_GROUP_DOES_NOT_EXIST = 3401;
+
+    public final static int LAMP_DELETE_SUCCESS = 3500;
+
     public interface ClientInterface {
         void handshake(@Nullable Timestamp serverTime);
 

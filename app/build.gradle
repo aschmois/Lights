@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.0"
+    buildToolsVersion "23.0.1"
 
     defaultConfig {
         applicationId "com.android305.lights"
@@ -25,10 +25,10 @@ android {
 
 dependencies {
     // Support Libraries
-    compile 'com.android.support:appcompat-v7:23.0.0'
-    compile 'com.android.support:support-v4:23.0.0'
-    compile 'com.android.support:cardview-v7:23.0.0'
-    compile 'com.android.support:recyclerview-v7:23.0.0'
+    compile 'com.android.support:appcompat-v7:23.0.1'
+    compile 'com.android.support:support-v4:23.0.1'
+    compile 'com.android.support:cardview-v7:23.0.1'
+    compile 'com.android.support:recyclerview-v7:23.0.1'
 
     // Logging
     compile 'org.slf4j:slf4j-simple:1.7.12'

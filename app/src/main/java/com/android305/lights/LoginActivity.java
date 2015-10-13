@@ -3,16 +3,10 @@ package com.android305.lights;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
@@ -20,12 +14,11 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,7 +35,7 @@ import java.util.regex.Pattern;
 /**
  * A login screen
  */
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends MyAppCompatActivity {
     public static final boolean DEBUG = true;
     private static final String TAG = "LoginActivity";
     private static final String hostRegex = "(?:(\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(\\d+))?)?(?:([A-z0-9.]+)(?::(\\d+))?)?";
@@ -66,21 +59,54 @@ public class LoginActivity extends AppCompatActivity {
     private View mProgressView;
     private View mLoginFormView;
 
-    ClientService mService;
-    boolean mBound = false;
-
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    public void onServiceBind(ClientService mService) {
         setContentView(R.layout.activity_login);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         if (getSupportActionBar() == null)
             this.setSupportActionBar(toolbar);
-        // Set up the login form.
         mHostView = (EditText) findViewById(R.id.ip_address);
         mSecretKeyView = (EditText) findViewById(R.id.secret_key);
-
+        mSecretKeyView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                final int DRAWABLE_RIGHT = 2;
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    if (event.getRawX() >= (mSecretKeyView.getRight() - mSecretKeyView.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                        if (mSecretKeyView.getInputType() != InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+                            mSecretKeyView.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        } else {
+                            mSecretKeyView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
         mPasswordView = (EditText) findViewById(R.id.password);
+
+        mPasswordView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                final int DRAWABLE_RIGHT = 2;
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    if (event.getRawX() >= (mPasswordView.getRight() - mPasswordView.getCompoundDrawables()[DRAWABLE_RIGHT].getBounds().width())) {
+                        if (mPasswordView.getInputType() != InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) {
+                            mPasswordView.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD);
+                        } else {
+                            mPasswordView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+                        }
+                        return true;
+                    }
+                }
+                return false;
+            }
+        });
+
+        mLoginFormView = findViewById(R.id.login_form);
+        mProgressView = findViewById(R.id.login_progress);
+
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -92,30 +118,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
-        CheckBox mSecretKeyShow = (CheckBox) findViewById(R.id.secrey_key_show);
-        mSecretKeyShow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mSecretKeyView.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                } else {
-                    mSecretKeyView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                }
-            }
-        });
-
-        CheckBox mPasswordShow = (CheckBox) findViewById(R.id.password_show);
-        mPasswordShow.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if (isChecked) {
-                    mPasswordView.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                } else {
-                    mPasswordView.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
-                }
-            }
-        });
-
         Button mHostSignInButton = (Button) findViewById(R.id.sign_in_button);
         mHostSignInButton.setOnClickListener(new OnClickListener() {
             @Override
@@ -123,9 +125,6 @@ public class LoginActivity extends AppCompatActivity {
                 attemptLogin(false);
             }
         });
-
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
 
         SharedPreferences pref = getSharedPreferences(getPackageName(), CONTEXT_RESTRICTED);
         if (pref.contains(PREF_HOST)) {
@@ -141,6 +140,13 @@ public class LoginActivity extends AppCompatActivity {
                 mSecretKeyView.setError(getString(R.string.error_incorrect_secret_key));
                 mSecretKeyView.requestFocus();
             }
+        }
+    }
+
+    @Override
+    public void onServiceReBind(ClientService mService) {
+        if (mService.isConnected()) {
+            goIntoLampActivity(false);
         }
     }
 
@@ -170,7 +176,7 @@ public class LoginActivity extends AppCompatActivity {
         if (scanResult != null) {
             BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
             textEncryptor.setPassword("deadpoolisawesome");
-            String data = textEncryptor.decrypt(scanResult.getContents());
+            String data = textEncryptor.decrypt(scanResult.getContents());//broken
             Matcher m = CONNECT_STRING_PATTERN.matcher(data);
             if (m.matches()) {
                 mHostView.setText(m.group(1) + ":" + m.group(2));
@@ -182,30 +188,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Bind to LocalService
-        Intent intent = new Intent(this, ClientService.class);
-        bindService(intent, mConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
-    }
-
-
-    /**
-     * Attempts to sign in or register the account specified by the login form.
-     * If there are form errors (invalid email, missing fields, etc.), the
-     * errors are presented and no actual login attempt is made.
-     */
     public void attemptLogin(boolean start) {
         if (mAuthTask != null) {
             return;
@@ -318,11 +300,6 @@ public class LoginActivity extends AppCompatActivity {
 
         @Override
         protected Integer doInBackground(Void... params) {
-            while (mService == null)
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                }
             return mService.authenticate(mHost, mSecretKey, mPassword);
         }
 
@@ -366,27 +343,6 @@ public class LoginActivity extends AppCompatActivity {
             showProgress(false);
         }
     }
-
-    /**
-     * Defines callbacks for service binding, passed to bindService()
-     */
-    private ServiceConnection mConnection = new ServiceConnection() {
-
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            ClientService.LocalBinder binder = (ClientService.LocalBinder) service;
-            mService = binder.getService();
-            mBound = true;
-            if (mService.isConnected()) {
-                goIntoLampActivity(false);
-            }
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mBound = false;
-        }
-    };
 
     private void goIntoLampActivity(boolean animation) {
         Intent i = new Intent(LoginActivity.this, GroupActivity.class);

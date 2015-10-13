@@ -38,26 +38,38 @@ public class LampUtils {
         return service.client.isConnected();
     }
 
-    public static Lamp addLamp(ClientService service, Lamp lamp) {
+    public static ClientResponse addLamp(ClientService service, Lamp lamp) {
+        return updateAdd(service, lamp, "add");
+    }
+
+    public static ClientResponse editLamp(ClientService service, Lamp lamp) {
+        return updateAdd(service, lamp, "edit");
+    }
+
+    private static ClientResponse updateAdd(ClientService service, Lamp lamp, String param) {
         try {
             int actionId = getActionId(service);
-            JSONObject request = request(actionId, "add", lamp);
+            JSONObject request = request(actionId, param, lamp);
             if (connectAndWait(service, actionId, request)) {
-                switch (service.response.get(actionId).getInt("code")) {
+                JSONObject obj = service.response.get(actionId);
+                int code = obj.getInt("code");
+                String msg = obj.getString("message");
+                switch (code) {
+                    case Client.LAMP_EDIT_SUCCESS:
                     case Client.LAMP_ADD_SUCCESS:
-                        JSONObject parsed = service.response.get(actionId).getJSONObject("data").getJSONObject("lamp");
+                        JSONObject parsed = obj.getJSONObject("data").getJSONObject("lamp");
                         Lamp retrievedLamp = Lamp.getLamp(parsed);
                         service.response.remove(actionId);
-                        return retrievedLamp;
-                    case Client.LAMP_ALREADY_EXISTS:
-                        return lamp;
+                        return new ClientResponse(code, msg, retrievedLamp);
+                    default:
+                        return new ClientResponse(code, msg, lamp);
                 }
             }
         } catch (InvalidKeyException e) {
-            Log.e(TAG, "getGroups() error", e);
+            Log.e(TAG, "updateAdd() error", e);
             return null;
         } catch (JSONException e) {
-            Log.e(TAG, "getGroups() error", e);
+            Log.e(TAG, "updateAdd() error", e);
             return null;
         }
         return null;
@@ -68,9 +80,11 @@ public class LampUtils {
             int actionId = getActionId(service);
             JSONObject request = request(actionId, "toggle", lamp);
             if (connectAndWait(service, actionId, request)) {
-                switch (service.response.get(actionId).getInt("code")) {
+                JSONObject obj = service.response.get(actionId);
+                int code = obj.getInt("code");
+                switch (code) {
                     case Client.LAMP_TOGGLE_SUCCESS:
-                        JSONObject parsed = service.response.get(actionId).getJSONObject("data").getJSONObject("lamp");
+                        JSONObject parsed = obj.getJSONObject("data").getJSONObject("lamp");
                         Lamp retrievedLamp = Lamp.getLamp(parsed);
                         service.response.remove(actionId);
                         return retrievedLamp;
@@ -79,12 +93,35 @@ public class LampUtils {
                 }
             }
         } catch (InvalidKeyException e) {
-            Log.e(TAG, "getGroups() error", e);
+            Log.e(TAG, "toggleLamp() error", e);
             return null;
         } catch (JSONException e) {
-            Log.e(TAG, "getGroups() error", e);
+            Log.e(TAG, "toggleLamp() error", e);
             return null;
         }
         return null;
+    }
+
+    public static boolean deleteLamp(ClientService service, Lamp lamp) {
+        try {
+            int actionId = getActionId(service);
+            JSONObject request = request(actionId, "delete", lamp);
+            if (connectAndWait(service, actionId, request)) {
+                JSONObject obj = service.response.get(actionId);
+                switch (obj.getInt("code")) {
+                    case Client.LAMP_DELETE_SUCCESS:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        } catch (InvalidKeyException e) {
+            Log.e(TAG, "deleteLamp() error", e);
+            return false;
+        } catch (JSONException e) {
+            Log.e(TAG, "deleteLamp() error", e);
+            return false;
+        }
+        return false;
     }
 }

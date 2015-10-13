@@ -13,13 +13,25 @@ import android.view.ViewGroup;
 import android.widget.ProgressBar;
 
 import com.android305.lights.R;
+import com.android305.lights.fragments.GroupFragment;
+import com.android305.lights.service.ClientService;
 import com.android305.lights.util.Timer;
 
 import java.sql.Time;
 import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> {
-    private Timer[] mDataset;
+    private ClientService mService;
+    private final GroupFragment mFragment;
+    private ArrayList<Timer> mDataset;
+
+    public TimerAdapter(ClientService service, Timer[] myDataset, GroupFragment fragment) {
+        mService = service;
+        mDataset = new ArrayList<>(Arrays.asList(myDataset));
+        mFragment = fragment;
+    }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         public int mTimerId;
@@ -47,10 +59,6 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
         }
     }
 
-    public TimerAdapter(Timer[] myDataset) {
-        mDataset = myDataset;
-    }
-
     @Override
     public TimerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.lamp_card, parent, false);
@@ -59,7 +67,7 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
 
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        Timer timer = mDataset[position];
+        Timer timer = mDataset.get(position);
         holder.mTimerId = timer.getId();
         Time start = timer.getStart();
         Time end = timer.getEnd();
@@ -81,6 +89,6 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
 
     @Override
     public int getItemCount() {
-        return mDataset.length;
+        return mDataset.size();
     }
 }
