@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
 
@@ -13,6 +14,13 @@ public abstract class MyAppCompatActivity extends AppCompatActivity {
     private boolean created;
     private boolean mBound;
     protected ClientService mService;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Intent intent = new Intent(this, ClientService.class);
+        startService(intent);
+    }
 
     @Override
     protected void onStart() {

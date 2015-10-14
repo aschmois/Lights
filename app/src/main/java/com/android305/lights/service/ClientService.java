@@ -68,6 +68,11 @@ public class ClientService extends Service implements Client.ClientInterface {
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return Service.START_STICKY;
+    }
+
+    @Override
     public IBinder onBind(Intent intent) {
         return mBinder;
     }
@@ -209,13 +214,9 @@ public class ClientService extends Service implements Client.ClientInterface {
             if (LoginActivity.DEBUG) {
                 boolean error = json.getBoolean("error");
                 String message = json.getString("message");
-                String original = json.getString("original");
                 StringBuilder sb = new StringBuilder("\n");
                 sb.append("Action ID: ");
                 sb.append(actionId);
-                sb.append("\n");
-                sb.append("Original: ");
-                sb.append(original);
                 sb.append("\n");
                 sb.append("Error: ");
                 sb.append(error);
@@ -243,6 +244,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.w(TAG, "Service is being destroyed");
         try {
             if (client != null) {
                 client.getSession().close(true);

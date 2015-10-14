@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.annotation.UiThread;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -119,15 +120,21 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
 
     @Override
     public void update(Group group) {
-        if (group.getLamps() != null) {
+        Lamp[] lamps = group.getLamps();
+        if (lamps == null || lamps.length == 0) {
+            mLampList.setVisibility(View.GONE); //TODO: FIXME
+            mEmptyLamps.setVisibility(View.VISIBLE);
+        } else {
+            mLampList.setVisibility(View.VISIBLE);
+            mEmptyLamps.setVisibility(View.GONE);
+        }
+        if (mLampAdapter == null) {
             mLampAdapter = new LampAdapter(mListener.getService(), group.getLamps(), this);
-            mLampList.swapAdapter(mLampAdapter, false);
+            mLampList.setAdapter(mLampAdapter);
             mLampList.setVisibility(View.VISIBLE);
             mEmptyLamps.setVisibility(View.GONE);
         } else {
-            mLampList.setAdapter(null);
-            mLampList.setVisibility(View.GONE);
-            mEmptyLamps.setVisibility(View.VISIBLE);
+            mLampAdapter.setData(group.getLamps());
         }
         if (group.getTimers() != null) {
             TimerAdapter adapter = new TimerAdapter(mListener.getService(), group.getTimers(), this);
@@ -186,12 +193,26 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
                     int pos = data.getIntExtra(LampEditActivity.EXTRA_POSITION, -1);
                     mLampAdapter.update(lamp, pos);
                 }
+                break;
         }
+        updateLampList();
     }
 
+    @UiThread
     @Override
     public void onDeleteLamp(int position) {
         mLampAdapter.delete(position);
+        updateLampList();
+    }
+
+    private void updateLampList() {
+        if (mLampAdapter.getItemCount() == 0) {
+            mLampList.setVisibility(View.GONE);
+            mEmptyLamps.setVisibility(View.VISIBLE);
+        } else {
+            mLampList.setVisibility(View.VISIBLE);
+            mEmptyLamps.setVisibility(View.GONE);
+        }
     }
 
     @Override

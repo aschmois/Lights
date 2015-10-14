@@ -1,5 +1,9 @@
 package com.android305.lights.util;
 
+import android.support.annotation.Nullable;
+
+import com.android305.lights.adapters.LampAdapter;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -18,6 +22,8 @@ public class Lamp implements Serializable {
     private boolean invert;
     private String error = null;
     private Group group;
+
+    private transient LampAdapter.ViewHolder boundViewHolder;
 
     private int internalGroupId;
 
@@ -87,6 +93,19 @@ public class Lamp implements Serializable {
 
     public void setInternalGroupId(int internalGroupId) {
         this.internalGroupId = internalGroupId;
+    }
+
+    @Nullable
+    public LampAdapter.ViewHolder getBoundViewHolder() {
+        return boundViewHolder;
+    }
+
+    public void setBoundViewHolder(@Nullable LampAdapter.ViewHolder boundViewHolder) {
+        this.boundViewHolder = boundViewHolder;
+    }
+
+    public void unbind() {
+        boundViewHolder = null;
     }
 
     @Override

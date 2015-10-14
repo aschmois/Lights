@@ -62,12 +62,24 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
     @Override
     public void onServiceReBind(ClientService mService) {
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
+        if (!mService.isConnected()) {
+            mService.reconnect();
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mMessageReceiver);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isFinishing()) {
+            Intent intent = new Intent(this, ClientService.class);
+            stopService(intent);
+        }
     }
 
     @Override
