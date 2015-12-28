@@ -108,12 +108,12 @@ public class ClientService extends Service implements Client.ClientInterface {
                 client.connect();
                 while (!handshake && !handshakeFailed && !invalidKey && client.isConnected())
                     ServiceUtils.sleep(100);
-                if (!client.isConnected())
-                    return ERROR_HOST_INVALID;
                 if (invalidKey)
                     return ERROR_KEY_INVALID;
                 if (handshakeFailed)
                     return ERROR_UNKNOWN;
+                if (!client.isConnected())
+                    return ERROR_HOST_INVALID;
                 int actionId = getActionId();
                 JSONObject write = new JSONObject();
                 write.put("action_id", actionId);
