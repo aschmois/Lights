@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
@@ -195,9 +196,8 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
     }
 
     @Override
-    public void onLoadFinished(Loader<SparseArray<Group>> loader, SparseArray<Group> data) {
-        if (data != null)
-            mSectionsPagerAdapter.setData(data);
+    public void onLoadFinished(Loader<SparseArray<Group>> loader, @Nullable SparseArray<Group> data) {
+        mSectionsPagerAdapter.setData(data);
         mLoadingGroups.setVisibility(View.GONE);
         if (data != null && data.size() > 0) {
             setTitle(mSectionsPagerAdapter.getPageTitle(0));

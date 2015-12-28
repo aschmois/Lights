@@ -120,6 +120,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
 
     @Override
     public void update(Group group) {
+        mGroup = group;
         Lamp[] lamps = group.getLamps();
         if (lamps == null || lamps.length == 0) {
             mLampList.setVisibility(View.GONE); //TODO: FIXME

@@ -1,6 +1,7 @@
 package com.android305.lights.adapters;
 
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
@@ -18,8 +19,11 @@ public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
         mData = new SparseArray<>();
     }
 
-    public void setData(@NonNull SparseArray<Group> data) {
-        mData = data;
+    public void setData(@Nullable SparseArray<Group> data) {
+        if (data != null)
+            mData = data;
+        else
+            mData = new SparseArray<>();
         notifyDataSetChanged();
     }
 

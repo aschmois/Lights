@@ -96,7 +96,7 @@ public class ClientSessionHandler extends IoHandlerAdapter {
                         future.awaitUninterruptibly(1000);
                         try {
                             Thread.sleep(5000);
-                        } catch (InterruptedException e) {
+                        } catch (InterruptedException ignored) {
                         }
                         if (pong) {
                             pong = false;

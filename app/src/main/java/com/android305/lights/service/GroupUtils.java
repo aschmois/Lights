@@ -51,10 +51,7 @@ public class GroupUtils {
                 case Client.GROUP_GET_ALL_DOES_NOT_EXIST:
                     return new SparseArray<>();
             }
-        } catch (InvalidKeyException e) {
-            Log.e(TAG, "getGroups() error", e);
-            return null;
-        } catch (JSONException e) {
+        } catch (InvalidKeyException | JSONException e) {
             Log.e(TAG, "getGroups() error", e);
             return null;
         }
