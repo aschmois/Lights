@@ -42,7 +42,9 @@
                     android:id="@+id/ip_address_txt"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/ip_address"/>
+                    android:text="@string/ip_address"
+                    android:layout_alignRight="@+id/inverted_txt"
+                    android:layout_alignEnd="@+id/inverted_txt"/>
 
                 <TextView
                     android:id="@+id/inverted_txt"
