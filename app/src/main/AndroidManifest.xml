@@ -12,7 +12,7 @@
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
         <activity
-            android:name=".LoginActivity"
+            android:name=".LoginActivity_"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize|stateVisible">
             <intent-filter>
@@ -28,12 +28,16 @@
             android:exported="false"/>
 
         <activity
-            android:name=".GroupActivity"
+            android:name=".GroupActivity_"
             android:label="@string/title_activity_group"/>
 
         <activity
-            android:name=".LampEditActivity"
+            android:name=".LampEditActivity_"
             android:label="@string/title_activity_lamp_edit"/>
+
+        <activity
+            android:name=".TimerEditActivity_"
+            android:label="@string/title_activity_timer_edit"/>
     </application>
 
 </manifest>

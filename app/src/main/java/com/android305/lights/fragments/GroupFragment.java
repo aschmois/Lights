@@ -3,10 +3,8 @@ package com.android305.lights.fragments;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.UiThread;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,20 +15,30 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.android305.lights.LampEditActivity;
+import com.android305.lights.LampEditActivity_;
 import com.android305.lights.R;
+import com.android305.lights.TimerEditActivity_;
 import com.android305.lights.adapters.LampAdapter;
 import com.android305.lights.adapters.TimerAdapter;
-import com.android305.lights.dialogs.DeleteConfirmationDialog;
+import com.android305.lights.dialogs.DeleteLampConfirmationDialog;
+import com.android305.lights.dialogs.DeleteTimerConfirmationDialog;
 import com.android305.lights.interfaces.ActivityAttachService;
 import com.android305.lights.interfaces.UpdateableFragment;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.Lamp;
+import com.android305.lights.util.Timer;
 
-public class GroupFragment extends Fragment implements UpdateableFragment<Group>, DeleteConfirmationDialog.DeleteConfirmationListener {
+import org.androidannotations.annotations.EFragment;
+import org.androidannotations.annotations.OnActivityResult;
+import org.androidannotations.annotations.SupposeUiThread;
+
+@EFragment
+public class GroupFragment extends Fragment implements UpdateableFragment<Group>, DeleteLampConfirmationDialog.DeleteLampConfirmationListener, DeleteTimerConfirmationDialog.DeleteTimerConfirmationListener {
     private static final String ARG_GROUP = "group";
     public static final int LAMP_ADD = 1000;
     public static final int LAMP_UPDATE = 1001;
+    public static final int TIMER_ADD = 2000;
+    public static final int TIMER_UPDATE = 2001;
 
     private ActivityAttachService mListener;
 
@@ -53,6 +61,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     private Toolbar mLampToolbar;
     private Toolbar mTimerToolbar;
 
+    private TimerAdapter mTimerAdapter;
     private LampAdapter mLampAdapter;
     private Group mGroup;
 
@@ -90,8 +99,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
             args = getArguments();
         }
         mGroup = (Group) args.getSerializable(ARG_GROUP);
-        if (mGroup == null)
-            throw new RuntimeException("Group was lost somewhere in the memory");
+        assert mGroup != null;
         mGroupId = mGroup.getId();
         mRootView = inflater.inflate(R.layout.fragment_group, container, false);
 
@@ -138,8 +146,8 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
             mLampAdapter.setData(group.getLamps());
         }
         if (group.getTimers() != null) {
-            TimerAdapter adapter = new TimerAdapter(mListener.getService(), group.getTimers(), this);
-            mTimerList.swapAdapter(adapter, false);
+            mTimerAdapter = new TimerAdapter(mListener.getService(), group.getTimers(), this);
+            mTimerList.swapAdapter(mTimerAdapter, false);
             mTimerList.setVisibility(View.VISIBLE);
             mEmptyTimers.setVisibility(View.GONE);
         } else {
@@ -155,9 +163,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
                         mLampAdapter.toggleLamps();
                         return true;
                     case R.id.action_add:
-                        Intent i = new Intent(getContext(), LampEditActivity.class);
-                        i.putExtra(LampEditActivity.EXTRA_GROUP_ID, mGroupId);
-                        startActivityForResult(i, LAMP_ADD);
+                        LampEditActivity_.intent(getContext()).mGroupId(mGroupId).startForResult(LAMP_ADD);
                         return true;
                     default:
                         return false;
@@ -169,7 +175,7 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
             public boolean onMenuItemClick(MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.action_add:
-                        //TODO: add timer
+                        TimerEditActivity_.intent(GroupFragment.this).mGroupId(mGroupId).startForResult(TIMER_ADD);
                         return true;
                     default:
                         return false;
@@ -178,32 +184,50 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
         });
     }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        switch (requestCode) {
-            case LAMP_ADD:
-                if (resultCode == Activity.RESULT_OK) {
-                    Lamp lamp = (Lamp) data.getSerializableExtra(LampEditActivity.EXTRA_LAMP);
-                    mLampAdapter.add(lamp);
-                }
-                break;
-            case LAMP_UPDATE:
-                if (resultCode == Activity.RESULT_OK) {
-                    Lamp lamp = (Lamp) data.getSerializableExtra(LampEditActivity.EXTRA_LAMP);
-                    int pos = data.getIntExtra(LampEditActivity.EXTRA_POSITION, -1);
-                    mLampAdapter.update(lamp, pos);
-                }
-                break;
+    @OnActivityResult(LAMP_ADD)
+    void onResult(int resultCode, @OnActivityResult.Extra Lamp lamp) {
+        if (resultCode == Activity.RESULT_OK) {
+            mLampAdapter.add(lamp);
         }
         updateLampList();
     }
 
-    @UiThread
+    @OnActivityResult(LAMP_UPDATE)
+    void onResult(int resultCode, @OnActivityResult.Extra Lamp lamp, @OnActivityResult.Extra int pos) {
+        if (resultCode == Activity.RESULT_OK) {
+            mLampAdapter.update(lamp, pos);
+        }
+        updateLampList();
+    }
+
+    @OnActivityResult(TIMER_ADD)
+    void onResult(int resultCode, @OnActivityResult.Extra Timer timer) {
+        if (resultCode == Activity.RESULT_OK) {
+            mTimerAdapter.add(timer);
+        }
+        updateTimerList();
+    }
+
+    @OnActivityResult(TIMER_UPDATE)
+    void onResult(int resultCode, @OnActivityResult.Extra Timer timer, @OnActivityResult.Extra int pos) {
+        if (resultCode == Activity.RESULT_OK) {
+            mTimerAdapter.update(timer, pos);
+        }
+        updateTimerList();
+    }
+
+    @SupposeUiThread
     @Override
     public void onDeleteLamp(int position) {
         mLampAdapter.delete(position);
         updateLampList();
+    }
+
+    @SupposeUiThread
+    @Override
+    public void onDeleteTimer(int position) {
+        mTimerAdapter.delete(position);
+        updateTimerList();
     }
 
     private void updateLampList() {
@@ -213,6 +237,16 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
         } else {
             mLampList.setVisibility(View.VISIBLE);
             mEmptyLamps.setVisibility(View.GONE);
+        }
+    }
+
+    private void updateTimerList() {
+        if (mTimerAdapter.getItemCount() == 0) {
+            mTimerList.setVisibility(View.GONE);
+            mEmptyTimers.setVisibility(View.VISIBLE);
+        } else {
+            mTimerList.setVisibility(View.VISIBLE);
+            mEmptyTimers.setVisibility(View.GONE);
         }
     }
 

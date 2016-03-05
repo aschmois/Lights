@@ -32,49 +32,45 @@
             android:layout_height="wrap_content"
             android:visibility="gone">
 
-            <RelativeLayout
+            <LinearLayout
                 android:id="@+id/info_panel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center">
+                android:paddingEnd="25dp"
+                android:paddingLeft="25dp"
+                android:paddingRight="25dp"
+                android:paddingStart="25dp">
 
                 <TextView
                     android:id="@+id/ip_address_txt"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/ip_address"
-                    android:layout_alignRight="@+id/inverted_txt"
-                    android:layout_alignEnd="@+id/inverted_txt"/>
-
-                <TextView
-                    android:id="@+id/inverted_txt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_below="@+id/ip_address_txt"
                     android:layout_marginEnd="2dp"
                     android:layout_marginRight="2dp"
-                    android:text="@string/inverted"/>
+                    android:text="@string/ip_address"/>
 
                 <TextView
                     android:id="@+id/ip_address"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignBaseline="@+id/ip_address_txt"
-                    android:layout_alignBottom="@+id/ip_address_txt"
-                    android:layout_toEndOf="@id/inverted_txt"
-                    android:layout_toRightOf="@id/inverted_txt"
+                    android:layout_marginEnd="15dp"
+                    android:layout_marginRight="15dp"
                     android:text="@string/loading"/>
+
+                <TextView
+                    android:id="@+id/inverted_txt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="2dp"
+                    android:layout_marginRight="2dp"
+                    android:text="@string/inverted"/>
 
                 <TextView
                     android:id="@+id/inverted"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_alignBaseline="@+id/inverted_txt"
-                    android:layout_alignBottom="@+id/inverted_txt"
-                    android:layout_toEndOf="@id/inverted_txt"
-                    android:layout_toRightOf="@id/inverted_txt"
                     android:text="@string/loading"/>
-            </RelativeLayout>
+            </LinearLayout>
 
             <Button
                 android:id="@+id/delete"

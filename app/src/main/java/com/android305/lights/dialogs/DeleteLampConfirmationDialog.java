@@ -12,16 +12,17 @@ import android.support.v4.app.DialogFragment;
 
 import com.android305.lights.R;
 
-public class DeleteConfirmationDialog extends DialogFragment {
+public class DeleteLampConfirmationDialog extends DialogFragment {
+    public final static String TAG = DeleteLampConfirmationDialog.class.getSimpleName();
     private final static String LAMP_NAME_EXTRA = "lamp";
     private final static String POSITION_EXTRA = "position";
 
-    public interface DeleteConfirmationListener {
+    public interface DeleteLampConfirmationListener {
         void onDeleteLamp(int position);
     }
 
-    public static DeleteConfirmationDialog newInstance(@NonNull String lampName, int position) {
-        DeleteConfirmationDialog dialog = new DeleteConfirmationDialog();
+    public static DeleteLampConfirmationDialog newInstance(@NonNull String lampName, int position) {
+        DeleteLampConfirmationDialog dialog = new DeleteLampConfirmationDialog();
         Bundle args = new Bundle();
         args.putString(LAMP_NAME_EXTRA, lampName);
         args.putInt(POSITION_EXTRA, position);
@@ -29,7 +30,7 @@ public class DeleteConfirmationDialog extends DialogFragment {
         return dialog;
     }
 
-    private DeleteConfirmationListener mListener;
+    private DeleteLampConfirmationListener mListener;
     private String mLampName;
     private int mPosition;
 
@@ -38,9 +39,9 @@ public class DeleteConfirmationDialog extends DialogFragment {
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
-            mListener = (DeleteConfirmationListener) getTargetFragment();
+            mListener = (DeleteLampConfirmationListener) getTargetFragment();
         } catch (ClassCastException e) {
-            throw new RuntimeException("Class " + getTargetFragment().toString() + " must implement DeleteConfirmationListener");
+            throw new RuntimeException("Class " + getTargetFragment().toString() + " must implement DeleteLampConfirmationListener");
         }
     }
 
@@ -49,24 +50,19 @@ public class DeleteConfirmationDialog extends DialogFragment {
     public void onAttach(Context context) {
         super.onAttach(context);
         try {
-            mListener = (DeleteConfirmationListener) getTargetFragment();
+            mListener = (DeleteLampConfirmationListener) getTargetFragment();
         } catch (ClassCastException e) {
-            throw new RuntimeException("Context " + getTargetFragment().toString() + " must implement DeleteConfirmationListener");
+            throw new RuntimeException("Context " + getTargetFragment().toString() + " must implement DeleteLampConfirmationListener");
         }
     }
 
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Bundle args;
-        if (savedInstanceState != null)
-            args = savedInstanceState;
-        else
-            args = getArguments();
+        Bundle args = getArguments();
         mLampName = args.getString(LAMP_NAME_EXTRA);
         mPosition = args.getInt(POSITION_EXTRA);
-        if (mLampName == null)
-            throw new RuntimeException("Programming error, lamp is null");
+        assert mLampName != null;
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(R.string.confirmation);
         builder.setMessage(String.format(getContext().getString(R.string.delete_lamp_confirm), mLampName));
@@ -78,13 +74,5 @@ public class DeleteConfirmationDialog extends DialogFragment {
             }
         });
         return builder.create();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-
-        outState.putSerializable(LAMP_NAME_EXTRA, mLampName);
-        outState.putInt(POSITION_EXTRA, mPosition);
     }
 }

@@ -167,7 +167,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     }
 
     private int getActionId() {
-        int actionId = ServiceUtils.randInt(1, 999);
+        int actionId = ServiceUtils.randInt(ServiceUtils.DEFAULT);
         if (response.containsKey(actionId))
             return getActionId();
         return actionId;

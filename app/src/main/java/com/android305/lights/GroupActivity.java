@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
@@ -25,22 +24,33 @@ import com.android305.lights.service.ClientService;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
 
+import org.androidannotations.annotations.Background;
+import org.androidannotations.annotations.EActivity;
+import org.androidannotations.annotations.UiThread;
+import org.androidannotations.annotations.ViewById;
+
+@EActivity(R.layout.activity_group)
 public class GroupActivity extends MyAppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
     private static final String TAG = "GroupActivity";
-    private LostConnectionTask mLostConnectionTask = null;
     private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
-    private TextView mNoGroupView;
-    private ProgressBar mLoadingGroups;
+
+    private boolean lostConnection = false;
+
+    @ViewById(R.id.pager)
+    ViewPager mViewPager;
+
+    @ViewById(R.id.no_groups)
+    TextView mNoGroupView;
+
+    @ViewById(R.id.loading_groups)
+    ProgressBar mLoadingGroups;
+
+    @ViewById(R.id.connection_lost_view)
+    View mLostConnectionView;
 
     @Override
     public void onServiceBind(ClientService mService) {
-        setContentView(R.layout.activity_group);
-
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
-        mNoGroupView = (TextView) findViewById(R.id.no_groups);
-        mLoadingGroups = (ProgressBar) findViewById(R.id.loading_groups);
-        mViewPager = (ViewPager) findViewById(R.id.pager);
         mViewPager.setAdapter(mSectionsPagerAdapter);
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -112,9 +122,9 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
         Bundle data = msg.getExtras();
         switch (data.getInt(ClientService.COMMAND, 0)) {
             case ClientService.LOST_CONNECTION:
-                if (mLostConnectionTask == null) {
-                    mLostConnectionTask = new LostConnectionTask();
-                    mLostConnectionTask.execute();
+                if (!lostConnection) {
+                    lostConnection = true;
+                    lostConnection();
                 }
                 break;
             case ClientService.GROUP_NEEDS_REFRESH:
@@ -137,61 +147,49 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
         return mService;
     }
 
-    class LostConnectionTask extends AsyncTask<Void, Void, Integer> {
-        View mConnectionLostView;
+    @Background
+    void lostConnection() {
+        showLostConnectionView();
+        int code = mService.reconnect();
+        onLostConnectionReturn(code);
+    }
 
-        public LostConnectionTask() {
-            mConnectionLostView = findViewById(R.id.connection_lost_view);
-        }
+    @UiThread
+    void showLostConnectionView() {
+        mLostConnectionView.setVisibility(View.VISIBLE);
+    }
 
-        protected void onPreExecute() {
-            mConnectionLostView.setVisibility(View.VISIBLE);
-        }
-
-        @Override
-        protected void onPostExecute(final Integer code) {
-            Intent i;
-            switch (code) {
-                case ClientService.ERROR_PASSWORD_INVALID:
-                    mLostConnectionTask = null;
-                    i = new Intent(GroupActivity.this, LoginActivity.class);
-                    i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
-                    i.putExtra(LoginActivity.EXTRA_PASSWORD_INVALID, true);
-                    startActivity(i);
-                    finish();
-                    break;
-                case ClientService.ERROR_KEY_INVALID:
-                    mLostConnectionTask = null;
-                    i = new Intent(GroupActivity.this, LoginActivity.class);
-                    i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
-                    i.putExtra(LoginActivity.EXTRA_KEY_INVALID, true);
-                    startActivity(i);
-                    finish();
-                    break;
-                case ClientService.ERROR_HOST_INVALID:
-                    mLostConnectionTask = new LostConnectionTask();
-                    mLostConnectionTask.execute();
-                    break;
-                case ClientService.ERROR_UNKNOWN:
-                    mLostConnectionTask = null;
-                    Toast.makeText(getApplicationContext(), "Unknown error. Check server console.", Toast.LENGTH_SHORT).show();
-                    break;
-                case ClientService.SUCCESS:
-                    mLostConnectionTask = null;
-                    mConnectionLostView.setVisibility(View.GONE);
-                    break;
-            }
-        }
-
-        @Override
-        protected Integer doInBackground(Void... args) {
-            return mService.reconnect();
-        }
-
-        @Override
-        protected void onCancelled() {
-            mLostConnectionTask = null;
-            mConnectionLostView.setVisibility(View.GONE);
+    @UiThread
+    void onLostConnectionReturn(int code) {
+        Intent i;
+        switch (code) {
+            case ClientService.ERROR_PASSWORD_INVALID:
+                lostConnection = false;
+                i = new Intent(GroupActivity.this, LoginActivity_.class);
+                i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
+                i.putExtra(LoginActivity.EXTRA_PASSWORD_INVALID, true);
+                startActivity(i);
+                finish();
+                break;
+            case ClientService.ERROR_KEY_INVALID:
+                lostConnection = false;
+                i = new Intent(GroupActivity.this, LoginActivity_.class);
+                i.putExtra(LoginActivity.EXTRA_ASK_SETTINGS, true);
+                i.putExtra(LoginActivity.EXTRA_KEY_INVALID, true);
+                startActivity(i);
+                finish();
+                break;
+            case ClientService.ERROR_HOST_INVALID:
+                lostConnection();
+                break;
+            case ClientService.ERROR_UNKNOWN:
+                lostConnection = false;
+                Toast.makeText(getApplicationContext(), "Unknown error. Check server console.", Toast.LENGTH_SHORT).show();
+                break;
+            case ClientService.SUCCESS:
+                lostConnection = false;
+                mLostConnectionView.setVisibility(View.GONE);
+                break;
         }
     }
 

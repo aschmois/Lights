@@ -1,10 +1,8 @@
 package com.android305.lights.adapters;
 
-import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.support.annotation.UiThread;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -20,9 +18,9 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android305.lights.LampEditActivity;
+import com.android305.lights.LampEditActivity_;
 import com.android305.lights.R;
-import com.android305.lights.dialogs.DeleteConfirmationDialog;
+import com.android305.lights.dialogs.DeleteLampConfirmationDialog;
 import com.android305.lights.fragments.GroupFragment;
 import com.android305.lights.service.ClientService;
 import com.android305.lights.service.LampUtils;
@@ -104,10 +102,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
                             toggleLamp();
                             return true;
                         case R.id.action_edit:
-                            Intent i = new Intent(mAdapter.mFragment.getContext(), LampEditActivity.class);
-                            i.putExtra(LampEditActivity.EXTRA_LAMP, mLamp);
-                            i.putExtra(LampEditActivity.EXTRA_POSITION, getAdapterPosition());
-                            mAdapter.mFragment.startActivityForResult(i, GroupFragment.LAMP_UPDATE);
+                            LampEditActivity_.intent(mAdapter.mFragment.getContext()).mLamp(mLamp).mPosition(getAdapterPosition()).startForResult(GroupFragment.LAMP_UPDATE);
                             return true;
                         default:
                             return false;
@@ -117,9 +112,9 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
             mDelete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    DeleteConfirmationDialog dialog = DeleteConfirmationDialog.newInstance(mLamp.getName(), getAdapterPosition());
+                    DeleteLampConfirmationDialog dialog = DeleteLampConfirmationDialog.newInstance(mLamp.getName(), getAdapterPosition());
                     dialog.setTargetFragment(mFragment, 1);
-                    dialog.show(mFragment.getChildFragmentManager(), "dialog_deleteConfirmation");
+                    dialog.show(mFragment.getChildFragmentManager(), DeleteLampConfirmationDialog.TAG);
                 }
             });
         }
@@ -177,27 +172,23 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         }
     }
 
-    @UiThread
     public void setData(Lamp[] lamps) {
         mDataset = new ArrayList<>(Arrays.asList(lamps));
         notifyDataSetChanged();
     }
 
-    @UiThread
     public void add(Lamp lamp) {
         mDataset.add(lamp);
         Log.d(TAG, "Add " + lamp.getName() + " Position " + (mDataset.size() - 1));
         notifyItemInserted(mDataset.size() - 1);
     }
 
-    @UiThread
     public void update(Lamp lamp, int position) {
         Log.d(TAG, "Update " + lamp.getName() + ". Position " + position);
         mDataset.set(position, lamp);
         notifyItemChanged(position);
     }
 
-    @UiThread
     public void delete(int position) {
         Log.d(TAG, "Delete position " + position);
         Lamp lamp = get(position);
@@ -215,7 +206,6 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         return mDataset.get(position);
     }
 
-    @UiThread
     private void remove(int position) {
         Log.d(TAG, "Remove position " + position);
         Lamp lamp = get(position);
@@ -306,7 +296,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
             mProgress.setVisibility(View.GONE);
             ViewHolder vh = mLamp.getBoundViewHolder();
             if (vh != null) {
-                vh.mToggleLampTask = null;
+                vh.mDeleteLampTask = null;
             } else {
                 Log.w(TAG, mLamp.getName() + " is not bound.");
             }

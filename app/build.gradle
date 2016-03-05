@@ -1,8 +1,9 @@
 apply plugin: 'com.android.application'
-
+apply plugin: 'android-apt'
+def AAVersion = '3.3.2'
 android {
     compileSdkVersion 23
-    buildToolsVersion "23.0.1"
+    buildToolsVersion "23.0.2"
 
     defaultConfig {
         applicationId "com.android305.lights"
@@ -13,7 +14,7 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -24,11 +25,15 @@ android {
 }
 
 dependencies {
+    // Annotations
+    apt "org.androidannotations:androidannotations:$AAVersion"
+    compile "org.androidannotations:androidannotations-api:$AAVersion"
+
     // Support Libraries
-    compile 'com.android.support:appcompat-v7:23.0.1'
-    compile 'com.android.support:support-v4:23.0.1'
-    compile 'com.android.support:cardview-v7:23.0.1'
-    compile 'com.android.support:recyclerview-v7:23.0.1'
+    compile 'com.android.support:appcompat-v7:23.2.0'
+    compile 'com.android.support:support-v4:23.2.0'
+    compile 'com.android.support:cardview-v7:23.0.1' //figure out why update is breaking my ui
+    compile 'com.android.support:recyclerview-v7:23.0.1' //figure out why update is breaking my ui
 
     // Logging
     compile 'org.slf4j:slf4j-simple:1.7.12'
@@ -42,4 +47,20 @@ dependencies {
     // Barcode
     compile 'com.google.zxing:android-integration:3.2.1'
 
+    // Timepicker
+    compile 'com.code-troopers.betterpickers:library:2.5.1'
+}
+
+apt {
+    arguments {
+        androidManifestFile variant.outputs[0]?.processResources?.manifestFile
+        // if you have multiple outputs (when using splits), you may want to have other index than 0
+
+        // you should set your package name here if you are using different application IDs
+        // resourcePackageName "your.package.name"
+
+        // You can set optional annotation processing options here, like these commented options:
+        // logLevel 'INFO'
+        // logFile '/var/log/aa.log'
+    }
 }

@@ -1,5 +1,10 @@
 package com.android305.lights.util;
 
+import android.support.annotation.Nullable;
+
+import com.android305.lights.adapters.LampAdapter;
+import com.android305.lights.adapters.TimerAdapter;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -22,6 +27,8 @@ public class Timer implements Serializable {
     private String RGB = null;
     private Group group;
     private int internalGroupId;
+
+    private transient TimerAdapter.ViewHolder boundViewHolder;
 
     public Timer() {
     }
@@ -48,6 +55,18 @@ public class Timer implements Serializable {
 
     public void setEnd(Time end) {
         this.end = end;
+    }
+
+    public boolean isEveryday() {
+        return sunday && monday && tuesday && wednesday && thursday && friday && saturday;
+    }
+
+    public boolean isWeekend() {
+        return sunday && !monday && !tuesday && !wednesday && !thursday && !friday && saturday;
+    }
+
+    public boolean isWeekdays() {
+        return !sunday && monday && tuesday && wednesday && thursday && friday && !saturday;
     }
 
     public boolean isSunday() {
@@ -137,6 +156,19 @@ public class Timer implements Serializable {
 
     public void setInternalGroupId(int internalGroupId) {
         this.internalGroupId = internalGroupId;
+    }
+
+    @Nullable
+    public TimerAdapter.ViewHolder getBoundViewHolder() {
+        return boundViewHolder;
+    }
+
+    public void setBoundViewHolder(@Nullable TimerAdapter.ViewHolder boundViewHolder) {
+        this.boundViewHolder = boundViewHolder;
+    }
+
+    public void unbind() {
+        boundViewHolder = null;
     }
 
     public JSONObject getParsed() {

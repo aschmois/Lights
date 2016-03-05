@@ -14,7 +14,7 @@ public class LampUtils {
     private final static String TAG = "LampUtils";
 
     private static int getActionId(ClientService service) {
-        int actionId = ServiceUtils.randInt(1000, 1999);
+        int actionId = ServiceUtils.randInt(ServiceUtils.LAMP);
         if (service.response.containsKey(actionId))
             return getActionId(service);
         return actionId;

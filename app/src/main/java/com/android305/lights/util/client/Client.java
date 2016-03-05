@@ -60,6 +60,19 @@ public class Client {
 
     public final static int LAMP_DELETE_SUCCESS = 3500;
 
+    /* Timer */
+    public final static int TIMER_SQL_ERROR = 4000;
+
+    public final static int TIMER_ADD_SUCCESS = 4100;
+
+    public final static int TIMER_GET_SUCCESS = 4200;
+    public final static int TIMER_GET_DOES_NOT_EXIST = 4201;
+
+    public final static int TIMER_EDIT_SUCCESS = 4400;
+    public final static int TIMER_EDIT_GROUP_DOES_NOT_EXIST = 4401;
+
+    public final static int TIMER_DELETE_SUCCESS = 4500;
+
     public interface ClientInterface {
         void handshake(@Nullable Timestamp serverTime);
 

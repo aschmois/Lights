@@ -16,7 +16,7 @@ public class GroupUtils {
     private final static String TAG = "GroupUtils";
 
     private static int getActionId(ClientService service) {
-        int actionId = ServiceUtils.randInt(2000, 2999);
+        int actionId = ServiceUtils.randInt(ServiceUtils.GROUP);
         if (service.response.containsKey(actionId))
             return getActionId(service);
         return actionId;

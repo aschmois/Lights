@@ -5,9 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Build;
-import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.util.Log;
@@ -27,6 +25,10 @@ import com.android305.lights.service.ClientService;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import org.androidannotations.annotations.Background;
+import org.androidannotations.annotations.EActivity;
+import org.androidannotations.annotations.UiThread;
+import org.androidannotations.annotations.ViewById;
 import org.jasypt.util.text.BasicTextEncryptor;
 
 import java.util.regex.Matcher;
@@ -35,6 +37,7 @@ import java.util.regex.Pattern;
 /**
  * A login screen
  */
+@EActivity(R.layout.activity_login)
 public class LoginActivity extends MyAppCompatActivity {
     public static final boolean DEBUG = true;
     private static final String TAG = "LoginActivity";
@@ -47,26 +50,25 @@ public class LoginActivity extends MyAppCompatActivity {
     public static final String EXTRA_PASSWORD_INVALID = "extraPasswordInvalid";
     public static final String EXTRA_KEY_INVALID = "extraKeyInvalid";
 
-    /**
-     * Keep track of the login task to ensure we can cancel it if requested.
-     */
-    private UserLoginTask mAuthTask = null;
+    @ViewById(R.id.ip_address)
+    EditText mHostView;
 
-    // UI references.
-    private EditText mHostView;
-    private EditText mSecretKeyView;
-    private EditText mPasswordView;
-    private View mProgressView;
-    private View mLoginFormView;
+    @ViewById(R.id.secret_key)
+    EditText mSecretKeyView;
+
+    @ViewById(R.id.password)
+    EditText mPasswordView;
+
+    @ViewById(R.id.login_progress)
+    View mProgressView;
+
+    @ViewById(R.id.login_form)
+    View mLoginFormView;
+
+    private boolean mLogging = false;
 
     @Override
     public void onServiceBind(ClientService mService) {
-        setContentView(R.layout.activity_login);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        if (getSupportActionBar() == null)
-            this.setSupportActionBar(toolbar);
-        mHostView = (EditText) findViewById(R.id.ip_address);
-        mSecretKeyView = (EditText) findViewById(R.id.secret_key);
         mSecretKeyView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -84,8 +86,6 @@ public class LoginActivity extends MyAppCompatActivity {
                 return false;
             }
         });
-        mPasswordView = (EditText) findViewById(R.id.password);
-
         mPasswordView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -103,10 +103,6 @@ public class LoginActivity extends MyAppCompatActivity {
                 return false;
             }
         });
-
-        mLoginFormView = findViewById(R.id.login_form);
-        mProgressView = findViewById(R.id.login_progress);
-
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
@@ -158,7 +154,7 @@ public class LoginActivity extends MyAppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (mAuthTask != null) {
+        if (mLogging) {
             return super.onOptionsItemSelected(item);
         }
         switch (item.getItemId()) {
@@ -179,7 +175,7 @@ public class LoginActivity extends MyAppCompatActivity {
             String data = textEncryptor.decrypt(scanResult.getContents());//broken
             Matcher m = CONNECT_STRING_PATTERN.matcher(data);
             if (m.matches()) {
-                mHostView.setText(m.group(1) + ":" + m.group(2));
+                mHostView.setText(String.format("%s:%s", m.group(1), m.group(2)));
                 mPasswordView.setText(m.group(3));
                 mSecretKeyView.setText(m.group(4));
             } else {
@@ -189,7 +185,7 @@ public class LoginActivity extends MyAppCompatActivity {
     }
 
     public void attemptLogin(boolean start) {
-        if (mAuthTask != null) {
+        if (mLogging) {
             return;
         }
 
@@ -238,8 +234,8 @@ public class LoginActivity extends MyAppCompatActivity {
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(host, sKey, password, start);
-            mAuthTask.execute((Void) null);
+            mLogging = true;
+            login(host, sKey, password, start);
         }
     }
 
@@ -281,71 +277,48 @@ public class LoginActivity extends MyAppCompatActivity {
         }
     }
 
-    /**
-     * Represents an asynchronous login task used to authenticate the user.
-     */
-    public class UserLoginTask extends AsyncTask<Void, Void, Integer> {
+    @Background
+    void login(String host, String secretKey, String password, boolean start) {
+        int code = mService.authenticate(host, secretKey, password);
+        onLogin(code, host, secretKey, password, start);
+    }
 
-        private final String mHost;
-        private final String mSecretKey;
-        private final String mPassword;
-        private final boolean mStart;
-
-        UserLoginTask(String host, String secretKey, String password, boolean start) {
-            mHost = host;
-            mSecretKey = secretKey;
-            mPassword = password;
-            mStart = start;
-        }
-
-        @Override
-        protected Integer doInBackground(Void... params) {
-            return mService.authenticate(mHost, mSecretKey, mPassword);
-        }
-
-        @Override
-        protected void onPostExecute(final Integer code) {
-            mAuthTask = null;
-            showProgress(false);
-            switch (code) {
-                case ClientService.ERROR_PASSWORD_INVALID:
-                    mPasswordView.setError(getString(R.string.error_incorrect_password));
-                    mPasswordView.requestFocus();
-                    break;
-                case ClientService.ERROR_KEY_INVALID:
-                    mSecretKeyView.setError(getString(R.string.error_incorrect_secret_key));
-                    mSecretKeyView.requestFocus();
-                    break;
-                case ClientService.ERROR_HOST_INVALID:
-                    mHostView.setError(getString(R.string.error_cant_reach_host));
-                    mHostView.requestFocus();
-                    break;
-                case ClientService.SUCCESS:
-                    if (DEBUG)
-                        Log.d(TAG, "Authenticated");
-                    SharedPreferences pref = getSharedPreferences(getPackageName(), CONTEXT_RESTRICTED);
-                    SharedPreferences.Editor editor = pref.edit();
-                    editor.putString(PREF_HOST, mHost);
-                    editor.putString(PREF_SECRET_KEY, mSecretKey);
-                    editor.putString(PREF_PASSWORD, mPassword);
-                    editor.apply();
-                    goIntoLampActivity(!mStart);
-                    break;
-                case ClientService.ERROR_UNKNOWN:
-                    Toast.makeText(getApplicationContext(), "Unknown error. Check server console.", Toast.LENGTH_SHORT).show();
-                    break;
-            }
-        }
-
-        @Override
-        protected void onCancelled() {
-            mAuthTask = null;
-            showProgress(false);
+    @UiThread
+    void onLogin(int code, String host, String secretKey, String password, boolean start) {
+        mLogging = false;
+        showProgress(false);
+        switch (code) {
+            case ClientService.ERROR_PASSWORD_INVALID:
+                mPasswordView.setError(getString(R.string.error_incorrect_password));
+                mPasswordView.requestFocus();
+                break;
+            case ClientService.ERROR_KEY_INVALID:
+                mSecretKeyView.setError(getString(R.string.error_incorrect_secret_key));
+                mSecretKeyView.requestFocus();
+                break;
+            case ClientService.ERROR_HOST_INVALID:
+                mHostView.setError(getString(R.string.error_cant_reach_host));
+                mHostView.requestFocus();
+                break;
+            case ClientService.SUCCESS:
+                if (DEBUG)
+                    Log.d(TAG, "Authenticated");
+                SharedPreferences pref = getSharedPreferences(getPackageName(), CONTEXT_RESTRICTED);
+                SharedPreferences.Editor editor = pref.edit();
+                editor.putString(PREF_HOST, host);
+                editor.putString(PREF_SECRET_KEY, secretKey);
+                editor.putString(PREF_PASSWORD, password);
+                editor.apply();
+                goIntoLampActivity(!start);
+                break;
+            case ClientService.ERROR_UNKNOWN:
+                Toast.makeText(getApplicationContext(), "Unknown error. Check server console.", Toast.LENGTH_SHORT).show();
+                break;
         }
     }
 
     private void goIntoLampActivity(boolean animation) {
-        Intent i = new Intent(LoginActivity.this, GroupActivity.class);
+        Intent i = new Intent(this, GroupActivity_.class);
         i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         if (!animation)
             i.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
