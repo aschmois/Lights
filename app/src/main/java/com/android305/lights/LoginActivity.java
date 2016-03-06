@@ -29,6 +29,7 @@ import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
+import org.apache.mina.util.Base64;
 import org.jasypt.util.text.BasicTextEncryptor;
 
 import java.util.regex.Matcher;
@@ -43,9 +44,9 @@ public class LoginActivity extends MyAppCompatActivity {
     private static final String TAG = "LoginActivity";
     private static final String hostRegex = "(?:(\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(\\d+))?)?(?:([A-z0-9.]+)(?::(\\d+))?)?";
     private static final Pattern CONNECT_STRING_PATTERN = Pattern.compile("([^:|\\n]+)(?::(\\d+))(?:\\|([^\\|\\n]+))(?:\\|([^\\|\\n]+))", Pattern.CASE_INSENSITIVE);
-    private static final String PREF_HOST = "prefHost";
-    private static final String PREF_SECRET_KEY = "prefSecretKey";
-    private static final String PREF_PASSWORD = "prefPassword";
+    public static final String PREF_HOST = "prefHost";
+    public static final String PREF_SECRET_KEY = "prefSecretKey";
+    public static final String PREF_PASSWORD = "prefPassword";
     public static final String EXTRA_ASK_SETTINGS = "extraAskSettings";
     public static final String EXTRA_PASSWORD_INVALID = "extraPasswordInvalid";
     public static final String EXTRA_KEY_INVALID = "extraKeyInvalid";
@@ -170,15 +171,26 @@ public class LoginActivity extends MyAppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
         IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
         if (scanResult != null) {
-            BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
-            textEncryptor.setPassword("deadpoolisawesome");
-            String data = textEncryptor.decrypt(scanResult.getContents());//broken
-            Matcher m = CONNECT_STRING_PATTERN.matcher(data);
-            if (m.matches()) {
-                mHostView.setText(String.format("%s:%s", m.group(1), m.group(2)));
-                mPasswordView.setText(m.group(3));
-                mSecretKeyView.setText(m.group(4));
-            } else {
+            try {
+                BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
+                textEncryptor.setPassword("deadpoolisawesome");
+                String base64encoded = scanResult.getContents();
+                Log.d("QR Code base 64", base64encoded);
+                String base64decodedEncrypted = new String(Base64.decodeBase64(base64encoded.getBytes()));
+                Log.d("QR Code base 64 Enc", base64decodedEncrypted);
+                String base64decodedDecrypted = textEncryptor.decrypt(base64decodedEncrypted);
+                Log.d("QR Code base 64 Dec", base64decodedDecrypted);
+
+                Matcher m = CONNECT_STRING_PATTERN.matcher(base64decodedDecrypted);
+                if (m.matches()) {
+                    mHostView.setText(String.format("%s:%s", m.group(1), m.group(2)));
+                    mPasswordView.setText(m.group(3));
+                    mSecretKeyView.setText(m.group(4));
+                } else {
+                    Toast.makeText(this, getString(R.string.broken_qr_code), Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
                 Toast.makeText(this, getString(R.string.broken_qr_code), Toast.LENGTH_SHORT).show();
             }
         }

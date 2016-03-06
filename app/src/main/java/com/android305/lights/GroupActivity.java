@@ -4,12 +4,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -28,6 +31,8 @@ import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
+import org.apache.mina.util.Base64;
+import org.jasypt.util.text.BasicTextEncryptor;
 
 @EActivity(R.layout.activity_group)
 public class GroupActivity extends MyAppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
@@ -104,6 +109,21 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
         int id = item.getItemId();
         switch (id) {
             case R.id.action_settings:
+                return true;
+            case R.id.share_qr:
+                SharedPreferences pref = getSharedPreferences(getPackageName(), CONTEXT_RESTRICTED);
+                String host = pref.getString(LoginActivity_.PREF_HOST, "");
+                String password = pref.getString(LoginActivity_.PREF_PASSWORD, "");
+                String sKey = pref.getString(LoginActivity_.PREF_SECRET_KEY, "");
+                String qrData = String.format("%s|%s|%s", host, password, sKey);
+                BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
+                textEncryptor.setPassword("deadpoolisawesome");
+                qrData = textEncryptor.encrypt(qrData);
+                qrData = new String(Base64.encodeBase64(qrData.getBytes()));
+                String qr = "https://chart.googleapis.com/chart?cht=qr&chld=M|4&chs=547x547&chl=" + qrData;
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(qr));
+                startActivity(i);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
