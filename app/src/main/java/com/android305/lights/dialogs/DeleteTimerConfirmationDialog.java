@@ -65,7 +65,7 @@ public class DeleteTimerConfirmationDialog extends DialogFragment {
         assert mTimerName != null;
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(R.string.confirmation);
-        builder.setMessage(String.format(getContext().getString(R.string.delete_lamp_confirm), mTimerName));
+        builder.setMessage(String.format(getContext().getString(R.string.delete_confirm), mTimerName));
         builder.setNegativeButton(android.R.string.no, null);
         builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
             @Override

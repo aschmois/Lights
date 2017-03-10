@@ -206,7 +206,10 @@ public class ClientService extends Service implements Client.ClientInterface {
                     case Client.GROUP_REFRESH:
                         Intent i = new Intent(FILTER);
                         i.putExtra(COMMAND, GROUP_NEEDS_REFRESH);
-                        i.putExtra(GROUP_EXTRA, Group.getGroup(json.getJSONObject("data").getJSONObject("group")));
+                        JSONObject data = json.getJSONObject("data");
+                        if (data.has("group")) {
+                            i.putExtra(GROUP_EXTRA, Group.getGroup(data.getJSONObject("group")));
+                        }
                         LocalBroadcastManager.getInstance(this).sendBroadcast(i);
                         break;
                 }

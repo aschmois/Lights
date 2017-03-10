@@ -199,16 +199,6 @@
                         android:text="@string/wednesday"/>
                 </TableRow>
             </TableLayout>
-
-            <Button
-                android:id="@+id/submit"
-                style="?android:textAppearanceSmall"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/submit"
-                android:textStyle="bold"/>
-
         </LinearLayout>
     </ScrollView>
 

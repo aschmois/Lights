@@ -5,7 +5,7 @@
         android:id="@+id/action_qr_code"
         android:orderInCategory="1"
         app:showAsAction="ifRoom"
-        android:icon="@drawable/qr"
+        android:icon="@drawable/ic_action_qr"
         android:title="@string/qr_code" />
 
 </menu>

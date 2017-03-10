@@ -1,8 +1,8 @@
 package com.android305.lights.adapters;
 
-import android.graphics.drawable.Drawable;
+import android.content.res.ColorStateList;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -11,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -47,7 +46,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         private Lamp mLamp;
         private CardView mCardView;
 
-        private final Drawable originalColor;
+        private final ColorStateList originalColor;
 
         private ToggleLampTask mToggleLampTask;
         private DeleteLampTask mDeleteLampTask;
@@ -59,25 +58,19 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         private ProgressBar mProgressSpinner;
         private TextView mIpAddress;
         private TextView mInverted;
-        private Button mDelete;
+        private TextView mErrorTxt;
+        private TextView mError;
+        private ImageButton mDelete;
 
-        public ViewHolder(LampAdapter adapter, CardView v) {
+        ViewHolder(LampAdapter adapter, CardView v) {
             super(v);
             mAdapter = adapter;
             mFragment = mAdapter.mFragment;
-            originalColor = v.getBackground();
+            originalColor = v.getCardBackgroundColor();
             mCardView = v;
             mInfoLayout = (RelativeLayout) v.findViewById(R.id.lamp_info);
             mToolbar = (Toolbar) v.findViewById(R.id.card_toolbar);
             mToolbar.inflateMenu(R.menu.menu_card_lamp);
-
-            ImageButton collapse = (ImageButton) mInfoLayout.findViewById(R.id.collapse);
-            collapse.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    UIUtils.collapse(mInfoLayout);
-                }
-            });
 
             mToolbar.setClickable(true);
             mToolbar.setOnClickListener(new View.OnClickListener() {
@@ -92,7 +85,9 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
             mProgressSpinner = (ProgressBar) mToolbar.findViewById(R.id.progress_spinner);
             mIpAddress = ((TextView) mInfoLayout.findViewById(R.id.ip_address));
             mInverted = ((TextView) mInfoLayout.findViewById(R.id.inverted));
-            mDelete = (Button) mInfoLayout.findViewById(R.id.delete);
+            mErrorTxt = ((TextView) mInfoLayout.findViewById(R.id.error_txt));
+            mError = ((TextView) mInfoLayout.findViewById(R.id.error));
+            mDelete = (ImageButton) mInfoLayout.findViewById(R.id.delete);
 
             mToolbar.setOnMenuItemClickListener(new Toolbar.OnMenuItemClickListener() {
                 @Override
@@ -119,21 +114,21 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
             });
         }
 
-        public void toggleLamp() {
+        void toggleLamp() {
             if (mToggleLampTask == null && mDeleteLampTask == null) {
                 mToggleLampTask = new ToggleLampTask(mAdapter, mProgressSpinner, getAdapterPosition(), mLamp);
                 mToggleLampTask.execute();
             }
         }
 
-        public void deleteLamp() {
+        void deleteLamp() {
             if (mDeleteLampTask == null && mToggleLampTask == null) {
                 mDeleteLampTask = new DeleteLampTask(mAdapter, mProgressSpinner, getAdapterPosition(), mLamp);
                 mDeleteLampTask.execute();
             }
         }
 
-        public void bindLamp(Lamp lamp) {
+        void bindLamp(Lamp lamp) {
             mInfoLayout.setVisibility(View.GONE);
             mDeleteLampTask = null;
             mToggleLampTask = null;
@@ -141,20 +136,24 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
             mToolbar.setTitle(lamp.getName());
             mIpAddress.setText(lamp.getIpAddress());
             mInverted.setText(lamp.isInvert() ? mFragment.getString(R.string.yes) : mFragment.getString(R.string.no));
+            if (lamp.getError() == null) {
+                mErrorTxt.setVisibility(View.INVISIBLE);
+                mError.setVisibility(View.INVISIBLE);
+            } else {
+                mErrorTxt.setVisibility(View.VISIBLE);
+                mError.setVisibility(View.VISIBLE);
+                mError.setText(lamp.getError() == null ? "No error" : lamp.getError());
+            }
             if (lamp.getStatus() == Lamp.STATUS_ON) {
-                mCardView.setBackgroundResource(R.color.lamp_on);
+                mCardView.setCardBackgroundColor(ContextCompat.getColor(mFragment.getContext(), R.color.lamp_on));
                 mProgressSpinner.setVisibility(View.GONE);
             } else if (lamp.getStatus() == Lamp.STATUS_PENDING) {
                 mProgressSpinner.setVisibility(View.VISIBLE);
             } else if (lamp.getStatus() == Lamp.STATUS_ERROR) {
-                mCardView.setBackgroundResource(R.color.lamp_error);
-                mProgressSpinner.setVisibility(View.GONE);
-            } else if (Build.VERSION.SDK_INT > 15) {
-                mCardView.setBackground(originalColor);
+                mCardView.setCardBackgroundColor(ContextCompat.getColor(mFragment.getContext(), R.color.lamp_error));
                 mProgressSpinner.setVisibility(View.GONE);
             } else {
-                //noinspection deprecation
-                mCardView.setBackgroundDrawable(originalColor);
+                mCardView.setCardBackgroundColor(originalColor);
                 mProgressSpinner.setVisibility(View.GONE);
             }
         }
@@ -216,7 +215,7 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
 
     @Override
     public LampAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.lamp_card, parent, false);
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_lamp, parent, false);
         return new ViewHolder(this, (CardView) itemView);
     }
 
@@ -232,13 +231,13 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         return mDataset.size();
     }
 
-    static class ToggleLampTask extends AsyncTask<Void, Void, Lamp> {
+    private static class ToggleLampTask extends AsyncTask<Void, Void, Lamp> {
         ProgressBar mProgress;
         Lamp mLamp;
         int mPosition;
         LampAdapter mAdapter;
 
-        public ToggleLampTask(LampAdapter adapter, ProgressBar progress, int position, Lamp lamp) {
+        ToggleLampTask(LampAdapter adapter, ProgressBar progress, int position, Lamp lamp) {
             mAdapter = adapter;
             mProgress = progress;
             mPosition = position;
@@ -274,13 +273,13 @@ public class LampAdapter extends RecyclerView.Adapter<LampAdapter.ViewHolder> {
         }
     }
 
-    static class DeleteLampTask extends AsyncTask<Void, Void, Boolean> {
+    private static class DeleteLampTask extends AsyncTask<Void, Void, Boolean> {
         ProgressBar mProgress;
         Lamp mLamp;
         int mPosition;
         LampAdapter mAdapter;
 
-        public DeleteLampTask(LampAdapter adapter, ProgressBar progress, int position, Lamp lamp) {
+        DeleteLampTask(LampAdapter adapter, ProgressBar progress, int position, Lamp lamp) {
             mAdapter = adapter;
             mProgress = progress;
             mPosition = position;

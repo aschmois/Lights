@@ -12,7 +12,6 @@ import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,22 +21,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android305.lights.adapters.SectionsPagerAdapter;
+import com.android305.lights.dialogs.DeleteGroupConfirmationDialog;
 import com.android305.lights.interfaces.ActivityAttachService;
 import com.android305.lights.service.ClientService;
+import com.android305.lights.service.GroupUtils;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.loaders.LampAndGroupLoader;
 
 import org.androidannotations.annotations.Background;
 import org.androidannotations.annotations.EActivity;
+import org.androidannotations.annotations.OnActivityResult;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 import org.apache.mina.util.Base64;
 import org.jasypt.util.text.BasicTextEncryptor;
 
 @EActivity(R.layout.activity_group)
-public class GroupActivity extends MyAppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService {
+public class GroupActivity extends MyAppCompatActivity implements LoaderManager.LoaderCallbacks<SparseArray<Group>>, ActivityAttachService, DeleteGroupConfirmationDialog.DeleteGroupConfirmationListener {
     private static final String TAG = "GroupActivity";
     private SectionsPagerAdapter mSectionsPagerAdapter;
+
+    public static final int GROUP_CHANGE = 1000;
 
     private boolean lostConnection = false;
 
@@ -53,6 +57,11 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
     @ViewById(R.id.connection_lost_view)
     View mLostConnectionView;
 
+    Group mLoadedGroup;
+    int mCurrPosition;
+
+    Group addedOrEditedGroup;
+
     @Override
     public void onServiceBind(ClientService mService) {
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
@@ -65,6 +74,8 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
             @Override
             public void onPageSelected(int position) {
                 setTitle(mSectionsPagerAdapter.getPageTitle(position));
+                mLoadedGroup = mSectionsPagerAdapter.getGroupAt(position);
+                mCurrPosition = position;
             }
 
             @Override
@@ -108,9 +119,17 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         switch (id) {
-            case R.id.action_settings:
+            case R.id.action_add_group:
+                GroupEditActivity_.intent(this).startForResult(GROUP_CHANGE);
                 return true;
-            case R.id.share_qr:
+            case R.id.action_edit_group:
+                GroupEditActivity_.intent(this).mGroup(mLoadedGroup).startForResult(GROUP_CHANGE);
+                return true;
+            case R.id.action_delete_group:
+                DeleteGroupConfirmationDialog dialog = DeleteGroupConfirmationDialog.newInstance(mLoadedGroup);
+                dialog.show(getSupportFragmentManager(), DeleteGroupConfirmationDialog.TAG);
+                return true;
+            case R.id.action_qr_share:
                 SharedPreferences pref = getSharedPreferences(getPackageName(), CONTEXT_RESTRICTED);
                 String host = pref.getString(LoginActivity_.PREF_HOST, "");
                 String password = pref.getString(LoginActivity_.PREF_PASSWORD, "");
@@ -125,11 +144,30 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
                 i.setData(Uri.parse(qr));
                 startActivity(i);
                 return true;
+            case R.id.action_settings:
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+    @OnActivityResult(GROUP_CHANGE)
+    void onResult(@OnActivityResult.Extra Group group) {
+        addedOrEditedGroup = group;
+        getSupportLoaderManager().restartLoader(0, null, GroupActivity.this);
+    }
+
+    @Background
+    public void onDeleteGroup(Group group) {
+        GroupUtils.deleteGroup(getService(), group);
+        onGroupDeleted();
+    }
+
+    @UiThread
+    void onGroupDeleted() {
+        addedOrEditedGroup = null;
+        getSupportLoaderManager().restartLoader(0, null, GroupActivity.this);
+    }
 
     private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
         @Override
@@ -218,10 +256,22 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
         mSectionsPagerAdapter.setData(data);
         mLoadingGroups.setVisibility(View.GONE);
         if (data != null && data.size() > 0) {
-            setTitle(mSectionsPagerAdapter.getPageTitle(0));
+            int pos = addedOrEditedGroup != null ? mSectionsPagerAdapter.getPosition(addedOrEditedGroup) : -1;
+            if (pos >= 0) {
+                mViewPager.setCurrentItem(pos);
+                setTitle(mSectionsPagerAdapter.getPageTitle(pos));
+                mLoadedGroup = mSectionsPagerAdapter.getGroupAt(pos);
+                mCurrPosition = pos;
+            } else {
+                mViewPager.setCurrentItem(0);
+                setTitle(mSectionsPagerAdapter.getPageTitle(0));
+                mLoadedGroup = mSectionsPagerAdapter.getGroupAt(0);
+                mCurrPosition = 0;
+            }
             mViewPager.setVisibility(View.VISIBLE);
             mNoGroupView.setVisibility(View.GONE);
         } else {
+            setTitle(R.string.title_activity_group);
             mViewPager.setVisibility(View.GONE);
             mNoGroupView.setVisibility(View.VISIBLE);
         }

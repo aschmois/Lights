@@ -38,6 +38,10 @@
         <activity
             android:name=".TimerEditActivity_"
             android:label="@string/title_activity_timer_edit"/>
+
+        <activity
+            android:name=".GroupEditActivity_"
+            android:label="@string/title_activity_group_edit"/>
     </application>
 
 </manifest>

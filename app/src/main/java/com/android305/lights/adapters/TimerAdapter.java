@@ -1,9 +1,9 @@
 package com.android305.lights.adapters;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
+import android.content.res.ColorStateList;
 import android.os.AsyncTask;
-import android.os.Build;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
@@ -19,7 +19,6 @@ import android.widget.Toast;
 
 import com.android305.lights.R;
 import com.android305.lights.TimerEditActivity_;
-import com.android305.lights.dialogs.DeleteLampConfirmationDialog;
 import com.android305.lights.dialogs.DeleteTimerConfirmationDialog;
 import com.android305.lights.fragments.GroupFragment;
 import com.android305.lights.service.ClientService;
@@ -44,18 +43,18 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public Timer mTimer;
+        Timer mTimer;
 
         private DeleteTimerTask mDeleteTimerTask;
-        public TimerAdapter mAdapter;
-        public CardView mCardView;
-        public Toolbar mToolbar;
-        public ProgressBar mProgressSpinner;
-        public final Drawable originalColor;
+        TimerAdapter mAdapter;
+        CardView mCardView;
+        Toolbar mToolbar;
+        ProgressBar mProgressSpinner;
+        final ColorStateList originalColor;
 
-        public ViewHolder(TimerAdapter adapter, CardView v) {
+        ViewHolder(TimerAdapter adapter, CardView v) {
             super(v);
-            originalColor = v.getBackground();
+            originalColor = v.getCardBackgroundColor();
             mAdapter = adapter;
             mCardView = v;
             mToolbar = (Toolbar) v.findViewById(R.id.card_toolbar);
@@ -82,7 +81,7 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
             mProgressSpinner = (ProgressBar) mToolbar.findViewById(R.id.progress_spinner);
         }
 
-        public void bindTimer(Timer timer) {
+        void bindTimer(Timer timer) {
             Context c = mAdapter.mFragment.getContext();
             TextView titleView = ((TextView) mToolbar.findViewById(R.id.timer));
             TextView daysView = ((TextView) mToolbar.findViewById(R.id.timer_days));
@@ -119,20 +118,17 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
             }
             daysView.setText(days);
             if (timer.getStatus() == 1) {
-                mCardView.setBackgroundResource(R.color.lamp_on);
+                mCardView.setCardBackgroundColor(ContextCompat.getColor(c, R.color.lamp_on));
             } else if (timer.getStatus() == 2) {
                 mProgressSpinner.setVisibility(View.VISIBLE);
             } else if (timer.getStatus() == 3) {
-                mCardView.setBackgroundResource(R.color.lamp_error);
-            } else if (Build.VERSION.SDK_INT > 15) {
-                mCardView.setBackground(originalColor);
+                mCardView.setCardBackgroundColor(ContextCompat.getColor(c, R.color.lamp_error));
             } else {
-                //noinspection deprecation
-                mCardView.setBackgroundDrawable(originalColor);
+                mCardView.setCardBackgroundColor(originalColor);
             }
         }
 
-        public void deleteTimer() {
+        void deleteTimer() {
             if (mDeleteTimerTask == null) {
                 mDeleteTimerTask = new DeleteTimerTask(mAdapter, mProgressSpinner, getAdapterPosition(), mTimer);
                 mDeleteTimerTask.execute();
@@ -142,7 +138,7 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
 
     @Override
     public TimerAdapter.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.timer_card, parent, false);
+        View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.card_timer, parent, false);
         return new ViewHolder(this, (CardView) itemView);
     }
 
@@ -194,13 +190,13 @@ public class TimerAdapter extends RecyclerView.Adapter<TimerAdapter.ViewHolder> 
         notifyDataSetChanged();
     }
 
-    static class DeleteTimerTask extends AsyncTask<Void, Void, Boolean> {
+    private static class DeleteTimerTask extends AsyncTask<Void, Void, Boolean> {
         ProgressBar mProgress;
         Timer mTimer;
         int mPosition;
         TimerAdapter mAdapter;
 
-        public DeleteTimerTask(TimerAdapter adapter, ProgressBar progress, int position, Timer timer) {
+        DeleteTimerTask(TimerAdapter adapter, ProgressBar progress, int position, Timer timer) {
             mAdapter = adapter;
             mProgress = progress;
             mPosition = position;

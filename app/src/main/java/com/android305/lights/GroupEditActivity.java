@@ -6,19 +6,17 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.os.Build;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android305.lights.service.ClientResponse;
 import com.android305.lights.service.ClientService;
-import com.android305.lights.service.LampUtils;
-import com.android305.lights.util.Lamp;
+import com.android305.lights.service.GroupUtils;
+import com.android305.lights.util.Group;
 import com.android305.lights.util.client.Client;
 
 import org.androidannotations.annotations.Background;
@@ -27,22 +25,15 @@ import org.androidannotations.annotations.Extra;
 import org.androidannotations.annotations.UiThread;
 import org.androidannotations.annotations.ViewById;
 
-@EActivity(R.layout.activity_lamp_edit)
-public class LampEditActivity extends MyAppCompatActivity {
-    private static final String TAG = LampEditActivity.class.getSimpleName();
-    private static final String hostRegex = "(?:(\\d+\\.\\d+\\.\\d+\\.\\d+)(?::(\\d+))?)?(?:([A-z0-9.]+)(?::(\\d+))?)?";
+@EActivity(R.layout.activity_group_edit)
+public class GroupEditActivity extends MyAppCompatActivity {
+    private static final String TAG = GroupEditActivity.class.getSimpleName();
 
     @ViewById(R.id.name_txt)
     TextView mNameTextView;
 
-    @ViewById(R.id.ip_address_txt)
-    TextView mHostTextView;
-
     @ViewById(R.id.name)
     EditText mNameView;
-
-    @ViewById(R.id.ip_address)
-    EditText mHostView;
 
     @ViewById(R.id.edit_progress)
     View mProgressView;
@@ -50,24 +41,15 @@ public class LampEditActivity extends MyAppCompatActivity {
     @ViewById(R.id.edit_form)
     View mFormView;
 
-    @ViewById(R.id.lamp_invert)
-    CheckBox mInvertRelay;
-
     @Extra
-    Lamp mLamp;
-
-    @Extra
-    int mGroupId = -1;
-
-    @Extra
-    int mPosition = -1;
+    Group mGroup;
 
     private boolean editing = false;
-    private MenuItem submitItem;
+    MenuItem submitItem;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_lamp_edit, menu);
+        getMenuInflater().inflate(R.menu.menu_group_edit, menu);
         return true;
     }
 
@@ -78,6 +60,7 @@ public class LampEditActivity extends MyAppCompatActivity {
             case R.id.action_submit:
                 submitItem = item;
                 attemptSubmit();
+                item.setEnabled(false);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -86,13 +69,9 @@ public class LampEditActivity extends MyAppCompatActivity {
 
     @Override
     public void onServiceBind(ClientService mService) {
-        if (mLamp != null) {
-            mGroupId = mLamp.getInternalGroupId();
+        if (mGroup != null) {
             mNameTextView.setVisibility(View.VISIBLE);
-            mHostTextView.setVisibility(View.VISIBLE);
-            mNameView.setText(mLamp.getName());
-            mHostView.setText(mLamp.getIpAddress());
-            mInvertRelay.setChecked(mLamp.isInvert());
+            mNameView.setText(mGroup.getName());
         }
     }
 
@@ -103,49 +82,27 @@ public class LampEditActivity extends MyAppCompatActivity {
 
         // Reset errors.
         mNameView.setError(null);
-        mHostView.setError(null);
 
         // Store values at the time of the login attempt.
         String name = mNameView.getText().toString();
-        String host = mHostView.getText().toString();
-        boolean invert = mInvertRelay.isChecked();
 
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid secret key
+        // Check for a name
         if (TextUtils.isEmpty(name)) {
             mNameView.setError(getString(R.string.error_field_required));
             focusView = mNameView;
             cancel = true;
         }
 
-        // Check for a valid host address.
-        if (TextUtils.isEmpty(host)) {
-            mHostView.setError(getString(R.string.error_field_required));
-            focusView = mHostView;
-            cancel = true;
-        } else if (!isHostValid(host)) {
-            mHostView.setError(getString(R.string.error_invalid_host));
-            focusView = mHostView;
-            cancel = true;
-        }
-
         if (cancel) {
-            // There was an error; don't attempt login and focus the first
-            // form field with an error.
             focusView.requestFocus();
         } else {
-            // Show a progress spinner, and kick off a background task to
-            // perform the user login attempt.
             showProgress(true);
             editing = true;
-            doLampEdit(name, host, invert);
+            doGroupEdit(name);
         }
-    }
-
-    private boolean isHostValid(String host) {
-        return host.matches(hostRegex);
     }
 
     /**
@@ -170,45 +127,38 @@ public class LampEditActivity extends MyAppCompatActivity {
                 mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
             }
         });
-
     }
 
     @Background
-    void doLampEdit(String name, String host, boolean invert) {
+    void doGroupEdit(String name) {
         ClientResponse response;
-        boolean newLamp = mLamp == null;
-        Lamp lamp = mLamp;
-        if (newLamp) {
-            lamp = new Lamp();
+        boolean newGroup = mGroup == null;
+        Group group = mGroup;
+        if (newGroup) {
+            group = new Group();
         }
-        lamp.setName(name);
-        lamp.setIpAddress(host);
-        lamp.setInvert(invert);
-        lamp.setInternalGroupId(mGroupId);
-        if (newLamp)
-            response = LampUtils.addLamp(mService, lamp);
+        group.setName(name);
+        if (newGroup)
+            response = GroupUtils.addGroup(mService, group);
         else {
-            response = LampUtils.editLamp(mService, lamp);
+            response = GroupUtils.editGroup(mService, group);
         }
-        onLampEdit(response);
+        onGroupEdit(response);
     }
 
     @UiThread
-    void onLampEdit(ClientResponse response) {
+    void onGroupEdit(ClientResponse response) {
         submitItem.setEnabled(true);
         showProgress(false);
         editing = false;
-        mLamp = response.getLamp();
+        mGroup = response.getGroup();
         switch (response.getResponse()) {
-            case Client.LAMP_ADD_SUCCESS:
-            case Client.LAMP_EDIT_SUCCESS:
+            case Client.GROUP_ADD_SUCCESS:
+            case Client.GROUP_EDIT_SUCCESS:
                 goIntoLampActivity();
                 break;
-            case Client.LAMP_ALREADY_EXISTS:
-                mNameView.setError(getString(R.string.error_lamp_already_exists));
-                break;
-            case Client.LAMP_EDIT_GROUP_DOES_NOT_EXIST:
-                Log.e(TAG, "lamp edit, group does not exist, programming error");
+            case Client.GROUP_ALREADY_EXISTS:
+                mNameView.setError(getString(R.string.error_group_already_exists));
                 break;
             default:
                 Toast.makeText(getApplicationContext(), R.string.unknown_error_check_server_console, Toast.LENGTH_SHORT).show();
@@ -218,8 +168,7 @@ public class LampEditActivity extends MyAppCompatActivity {
 
     private void goIntoLampActivity() {
         Intent i = new Intent();
-        i.putExtra("lamp", mLamp);
-        i.putExtra("pos", mPosition);
+        i.putExtra("group", mGroup);
         setResult(RESULT_OK, i);
         finish();
     }

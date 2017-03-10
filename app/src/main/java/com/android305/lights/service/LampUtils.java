@@ -116,10 +116,10 @@ public class LampUtils {
                 }
             }
         } catch (InvalidKeyException e) {
-            Log.e(TAG, "deleteLamp() error", e);
+            Log.e(TAG, "deleteGroup() error", e);
             return false;
         } catch (JSONException e) {
-            Log.e(TAG, "deleteLamp() error", e);
+            Log.e(TAG, "deleteGroup() error", e);
             return false;
         }
         return false;

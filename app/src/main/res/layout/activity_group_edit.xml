@@ -20,7 +20,6 @@
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         tools:ignore="UnusedAttribute"/>
 
-    <!-- Login progress -->
     <ProgressBar
         android:id="@+id/edit_progress"
         style="?android:attr/progressBarStyleLarge"
@@ -44,56 +43,15 @@
                 android:id="@+id/name_txt"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/prompt_lamp_name"
+                android:text="@string/prompt_group_name"
                 android:textStyle="bold"/>
 
             <EditText
                 android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/prompt_lamp_name"
+                android:hint="@string/prompt_group_name"
                 android:maxLines="1"/>
-
-            <TextView
-                android:id="@+id/ip_address_txt"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:text="@string/prompt_ip_address"
-                android:textStyle="bold"/>
-
-            <EditText
-                android:id="@+id/ip_address"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/prompt_ip"
-                android:maxLines="1"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:layout_marginStart="5dp"
-                android:text="@string/host_lamp_help"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textStyle="italic"/>
-
-            <CheckBox
-                android:id="@+id/lamp_invert"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="@string/relay_inverted"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="5dp"
-                android:layout_marginStart="5dp"
-                android:text="@string/invert_help"
-                android:textAppearance="?android:attr/textAppearanceSmall"
-                android:textStyle="italic"/>
-
         </LinearLayout>
     </ScrollView>
 

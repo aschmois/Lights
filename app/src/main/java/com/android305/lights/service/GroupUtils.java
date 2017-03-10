@@ -22,6 +22,15 @@ public class GroupUtils {
         return actionId;
     }
 
+    private static JSONObject request(int actionId, String secondaryAction, Group group) throws JSONException {
+        JSONObject request = new JSONObject();
+        request.put("action_id", actionId);
+        request.put("action", "group");
+        request.put("secondary_action", secondaryAction);
+        request.put("group", group.getParsed());
+        return request;
+    }
+
     public static SparseArray<Group> getGroups(ClientService service) {
         try {
             int actionId = getActionId(service);
@@ -57,5 +66,76 @@ public class GroupUtils {
         }
         return new SparseArray<>();
     }
+
+    public static boolean deleteGroup(ClientService service, Group group) {
+        try {
+            int actionId = getActionId(service);
+            JSONObject request = request(actionId, "delete", group);
+            if (connectAndWait(service, actionId, request)) {
+                JSONObject obj = service.response.get(actionId);
+                switch (obj.getInt("code")) {
+                    case Client.GROUP_DELETE_SUCCESS:
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        } catch (InvalidKeyException e) {
+            Log.e(TAG, "deleteGroup() error", e);
+            return false;
+        } catch (JSONException e) {
+            Log.e(TAG, "deleteGroup() error", e);
+            return false;
+        }
+        return false;
+    }
+
+    public static ClientResponse addGroup(ClientService service, Group group) {
+        return updateAdd(service, group, "add");
+    }
+
+    public static ClientResponse editGroup(ClientService service, Group group) {
+        return updateAdd(service, group, "edit");
+    }
+
+    private static ClientResponse updateAdd(ClientService service, Group group, String param) {
+        try {
+            int actionId = getActionId(service);
+            JSONObject request = request(actionId, param, group);
+            if (connectAndWait(service, actionId, request)) {
+                JSONObject obj = service.response.get(actionId);
+                int code = obj.getInt("code");
+                String msg = obj.getString("message");
+                switch (code) {
+                    case Client.GROUP_EDIT_SUCCESS:
+                    case Client.GROUP_ADD_SUCCESS:
+                        JSONObject parsed = obj.getJSONObject("data").getJSONObject("group");
+                        Group retrievedGroup = Group.getGroup(parsed);
+                        service.response.remove(actionId);
+                        return new ClientResponse(code, msg, retrievedGroup);
+                    default:
+                        return new ClientResponse(code, msg, group);
+                }
+            }
+        } catch (InvalidKeyException e) {
+            Log.e(TAG, "updateAdd() error", e);
+            return null;
+        } catch (JSONException e) {
+            Log.e(TAG, "updateAdd() error", e);
+            return null;
+        }
+        return null;
+    }
+
+    private static boolean connectAndWait(ClientService service, int actionId, JSONObject request) throws InvalidKeyException {
+        if (service.client == null || !service.client.isConnected())
+            return false; //TODO: figure out how to wait for connection, if I do a while loop the thread is blocked, may need to thread this method further
+        service.client.write(request.toString());
+        while (!service.response.containsKey(actionId) && service.client.isConnected())
+            ServiceUtils.sleep(10);
+        return service.client.isConnected();
+    }
+
+
 
 }

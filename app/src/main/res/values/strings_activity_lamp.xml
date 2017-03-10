@@ -6,6 +6,7 @@
     <string name="no_timer">No Timer Entries</string>
     <string name="ip_address">IP:</string>
     <string name="inverted">Inverted:</string>
+    <string name="error">Error:</string>
     <string name="toggle">Toggle</string>
     <string name="info">Info</string>
     <string name="edit">Edit</string>

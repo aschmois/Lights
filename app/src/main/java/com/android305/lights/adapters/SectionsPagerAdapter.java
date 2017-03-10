@@ -8,7 +8,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.SparseArray;
 
 import com.android305.lights.fragments.GroupFragment;
-import com.android305.lights.interfaces.UpdateableFragment;
+import com.android305.lights.interfaces.UpdatableFragment;
 import com.android305.lights.util.Group;
 
 public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
@@ -47,11 +47,19 @@ public class SectionsPagerAdapter extends FragmentStatePagerAdapter {
         return mData.valueAt(position).getName();
     }
 
+    public Group getGroupAt(int position) {
+        return mData.valueAt(position);
+    }
+
+    public int getPosition(@NonNull Group group) {
+        return mData.indexOfKey(group.getId());
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public int getItemPosition(Object object) {
-        if (object instanceof UpdateableFragment) {
-            UpdateableFragment<Group> fragment = (UpdateableFragment<Group>) object;
+        if (object instanceof UpdatableFragment) {
+            UpdatableFragment<Group> fragment = (UpdatableFragment<Group>) object;
             Group g = mData.get(fragment.getDataId());
             if (g != null)
                 fragment.update(g);

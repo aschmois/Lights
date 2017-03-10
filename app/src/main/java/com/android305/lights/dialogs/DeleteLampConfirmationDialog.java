@@ -65,7 +65,7 @@ public class DeleteLampConfirmationDialog extends DialogFragment {
         assert mLampName != null;
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(R.string.confirmation);
-        builder.setMessage(String.format(getContext().getString(R.string.delete_lamp_confirm), mLampName));
+        builder.setMessage(String.format(getContext().getString(R.string.delete_confirm), mLampName));
         builder.setNegativeButton(android.R.string.no, null);
         builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
             @Override

@@ -93,10 +93,17 @@ public class Group implements Serializable {
 
     @Override
     public String toString() {
-        return "Group{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", lamps=" + Arrays.toString(lamps) +
-                '}';
+        return "Group{" + "id=" + id + ", name='" + name + '\'' + ", lamps=" + Arrays.toString(lamps) + '}';
+    }
+
+    public JSONObject getParsed() {
+        try {
+            JSONObject group = new JSONObject();
+            group.put("id", id);
+            group.put("name", name);
+            return group;
+        } catch (JSONException e) {
+            throw new RuntimeException("Programming error");
+        }
     }
 }

@@ -30,8 +30,7 @@ public class Client {
     public final static int ERROR_NOT_AUTHENTICATED = 1002;
 
     /* Group */
-    public final static int GROUP_ERROR_USAGE = 2000;
-    public final static int GROUP_SQL_ERROR = 2001;
+    public final static int GROUP_SQL_ERROR = 2000;
     public final static int GROUP_REFRESH = 2002;
 
     public final static int GROUP_ADD_SUCCESS = 2100;
@@ -42,6 +41,10 @@ public class Client {
 
     public final static int GROUP_GET_ALL_SUCCESS = 2300;
     public final static int GROUP_GET_ALL_DOES_NOT_EXIST = 2301;
+
+    public final static int GROUP_EDIT_SUCCESS = 2400;
+
+    public final static int GROUP_DELETE_SUCCESS = 2500;
 
     /* Lamp */
     public final static int LAMP_SQL_ERROR = 3000;

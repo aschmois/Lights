@@ -23,7 +23,7 @@ import com.android305.lights.adapters.TimerAdapter;
 import com.android305.lights.dialogs.DeleteLampConfirmationDialog;
 import com.android305.lights.dialogs.DeleteTimerConfirmationDialog;
 import com.android305.lights.interfaces.ActivityAttachService;
-import com.android305.lights.interfaces.UpdateableFragment;
+import com.android305.lights.interfaces.UpdatableFragment;
 import com.android305.lights.util.Group;
 import com.android305.lights.util.Lamp;
 import com.android305.lights.util.Timer;
@@ -33,7 +33,7 @@ import org.androidannotations.annotations.OnActivityResult;
 import org.androidannotations.annotations.SupposeUiThread;
 
 @EFragment
-public class GroupFragment extends Fragment implements UpdateableFragment<Group>, DeleteLampConfirmationDialog.DeleteLampConfirmationListener, DeleteTimerConfirmationDialog.DeleteTimerConfirmationListener {
+public class GroupFragment extends Fragment implements UpdatableFragment<Group>, DeleteLampConfirmationDialog.DeleteLampConfirmationListener, DeleteTimerConfirmationDialog.DeleteTimerConfirmationListener {
     private static final String ARG_GROUP = "group";
     public static final int LAMP_ADD = 1000;
     public static final int LAMP_UPDATE = 1001;
@@ -81,12 +81,12 @@ public class GroupFragment extends Fragment implements UpdateableFragment<Group>
     }
 
     @Override
-    public void onAttach(Context activity) {
-        super.onAttach(activity);
+    public void onAttach(Context c) {
+        super.onAttach(c);
         try {
-            mListener = (ActivityAttachService) activity;
+            mListener = (ActivityAttachService) c;
         } catch (ClassCastException e) {
-            throw new RuntimeException(activity.toString() + " must implement ActivityAttachService");
+            throw new RuntimeException(c.toString() + " must implement ActivityAttachService");
         }
     }
 
