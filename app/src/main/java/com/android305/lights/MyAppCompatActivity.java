@@ -32,6 +32,7 @@ public abstract class MyAppCompatActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        mService.cancelConnections();
         if (mBound) {
             unbindService(mConnection);
             mBound = false;

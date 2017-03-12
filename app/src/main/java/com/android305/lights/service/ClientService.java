@@ -47,6 +47,7 @@ public class ClientService extends Service implements Client.ClientInterface {
     private String mPassword;
     private String mSecretKey;
     private boolean authenticated = true;
+    private boolean cancel = false;
 
     protected HashMap<Integer, JSONObject> response = new HashMap<>();
 
@@ -78,6 +79,10 @@ public class ClientService extends Service implements Client.ClientInterface {
     }
 
     public int authenticate(String host, String sKey, String password) {
+        if (cancel) {
+            cancel = false;
+            return ERROR_UNKNOWN;
+        }
         handshake = false;
         handshakeFailed = false;
         invalidKey = false;
@@ -151,6 +156,10 @@ public class ClientService extends Service implements Client.ClientInterface {
     }
 
     public int reconnect() {
+        if (cancel) {
+            cancel = false;
+            return ERROR_UNKNOWN;
+        }
         if (mHost == null)
             return ERROR_HOST_INVALID;
         if (mPassword == null)
@@ -165,6 +174,11 @@ public class ClientService extends Service implements Client.ClientInterface {
         }
         return auth;
     }
+
+    public void cancelConnections() {
+        this.cancel = true;
+    }
+
 
     private int getActionId() {
         int actionId = ServiceUtils.randInt(ServiceUtils.DEFAULT);
