@@ -121,8 +121,8 @@ public class Client {
         final NioSocketConnector connector = new NioSocketConnector();
         connector.setConnectTimeoutMillis(3000);
         TextLineCodecFactory factory = new TextLineCodecFactory(Charset.forName("UTF-8"));
-        factory.setEncoderMaxLineLength(8192);
-        factory.setDecoderMaxLineLength(8192);
+        factory.setEncoderMaxLineLength(Integer.MAX_VALUE);
+        factory.setDecoderMaxLineLength(Integer.MAX_VALUE);
         connector.getFilterChain().addLast("codec", new ProtocolCodecFilter(factory));
         h = new ClientSessionHandler(mCallback, secretKey);
         connector.setHandler(h);
