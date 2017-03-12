@@ -87,6 +87,7 @@ public class GroupActivity extends MyAppCompatActivity implements LoaderManager.
     }
 
     @Override
+    @Background
     public void onServiceReBind(ClientService mService) {
         LocalBroadcastManager.getInstance(this).registerReceiver((mMessageReceiver), new IntentFilter(ClientService.FILTER));
         if (!mService.isConnected()) {
